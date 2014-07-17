@@ -12,8 +12,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-02'; # DATE
-our $VERSION = '0.01'; # VERSION
+our $DATE = '2014-07-17'; # DATE
+our $VERSION = '0.02'; # VERSION
 
 our %SPEC;
 
@@ -93,6 +93,20 @@ _
             req => 1,
             pos => 0,
         },
+        word_breaks => {
+            summary => 'Extra characters to break word at',
+            description => <<'_',
+
+In addition to space and tab.
+
+Example: `=:`.
+
+Note that the characters won't break words if inside quotes or escaped.
+
+_
+            schema  => 'str*',
+            pos => 1,
+        },
     },
     result_naked => 1,
     result => {
@@ -100,7 +114,9 @@ _
     },
 };
 sub break_cmdline_into_words {
-    my $cmdline = shift;
+    my ($cmdline, $word_breaks) = @_;
+
+    $word_breaks //= '';
 
     # BEGIN stolen from Parse::CommandLine, with some mods
     $cmdline =~ s/\A\s+//ms;
@@ -156,6 +172,16 @@ sub break_cmdline_into_words {
             next;
         }
 
+        if (index($word_breaks, $char) >= 0) {
+            if ($double_quoted || $single_quoted || $escaped) {
+                $buf .= $char;
+                next;
+            }
+            push @argv, $buf if defined $buf;
+            undef $buf;
+            next;
+        }
+
         $buf .= $char;
     }
     push @argv, $buf if defined $buf;
@@ -199,7 +225,10 @@ sub parse_cmdline {
     my ($line, $point) = @_;
 
     $line  //= $ENV{COMP_LINE};
-    $point //= $ENV{COMP_POINT};
+    $point //= $ENV{COMP_POINT} // 0;
+
+    die "$0: COMP_LINE not set, make sure this script is run under ".
+        "bash completion (e.g. through complete -C)\n" unless defined $line;
 
     my $left  = substr($line, 0, $point);
     my $right = substr($line, $point);
@@ -324,7 +353,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.01 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-02.
+This document describes version 0.02 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-17.
 
 =head1 DESCRIPTION
 
@@ -405,6 +434,16 @@ Arguments ('*' denotes required arguments):
 =over 4
 
 =item * B<cmdline>* => I<str>
+
+=item * B<word_breaks> => I<str>
+
+Extra characters to break word at.
+
+In addition to space and tab.
+
+Example: C<=:>.
+
+Note that the characters won't break words if inside quotes or escaped.
 
 =back
 

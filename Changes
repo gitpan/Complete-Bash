@@ -1,5 +1,18 @@
 Revision history for Complete-Bash
 
+0.02    2014-07-17 (SHARYANTO)
+
+        [ENHANCEMENTS]
+
+        - Add error message if COMP_LINE is not set.
+
+        - Add option: 'word_breaks' to allow breaking at other characters, like
+          bash's COMP_WORDBREAKS.
+
+
 0.01    2014-07-02 (SHARYANTO)
 
-        - First release, extracted from Complete-Util.
+        - First release, extracted from Complete-Util. format_completion() is
+          from Complete::Util's format_shell_completion() but can also accept
+          array instead of hash. parse_cmdline() is from Complete::Util's
+          parse_shell_cmdline() but with a different return value.
