@@ -2,7 +2,7 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.02 of Complete::Bash (from Perl
+    This document describes version 0.03 of Complete::Bash (from Perl
     distribution Complete-Bash), released on 2014-07-17.
 
 DESCRIPTION
@@ -82,15 +82,6 @@ FUNCTIONS
 
     *   word_breaks => *str*
 
-        Extra characters to break word at.
-
-        In addition to space and tab.
-
-        Example: "=:".
-
-        Note that the characters won't break words if inside quotes or
-        escaped.
-
     Return value:
 
   format_completion(@args) -> str
@@ -128,8 +119,8 @@ FUNCTIONS
   mimic_dir_completion(@args) -> array
     Make completion of paths behave more like shell.
 
-    Note for users: normally you just need to use
-    "format_shell_completion()" and need not know about this function.
+    Note for users: normally you just need to use "format_completion()" and
+    need not know about this function.
 
     This function employs a trick to make directory/path completion work
     more like shell's own. In shell, when completing directory, the sole
@@ -169,6 +160,17 @@ FUNCTIONS
     *   point => *int*
 
         Point/position to complete in command-line, defaults to COMP_POINT.
+
+    *   word_breaks => *str*
+
+        Extra characters to break word at.
+
+        In addition to space and tab.
+
+        Example: "=:".
+
+        Note that the characters won't break words if inside quotes or
+        escaped.
 
     Return value:
 

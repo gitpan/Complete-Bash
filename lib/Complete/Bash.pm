@@ -13,7 +13,7 @@ our @EXPORT_OK = qw(
                );
 
 our $DATE = '2014-07-17'; # DATE
-our $VERSION = '0.02'; # VERSION
+our $VERSION = '0.03'; # VERSION
 
 our %SPEC;
 
@@ -22,8 +22,8 @@ $SPEC{mimic_dir_completion} = {
     summary => 'Make completion of paths behave more like shell',
     description => <<'_',
 
-Note for users: normally you just need to use `format_shell_completion()` and
-need not know about this function.
+Note for users: normally you just need to use `format_completion()` and need not
+know about this function.
 
 This function employs a trick to make directory/path completion work more like
 shell's own. In shell, when completing directory, the sole completion for `foo/`
@@ -94,16 +94,6 @@ _
             pos => 0,
         },
         word_breaks => {
-            summary => 'Extra characters to break word at',
-            description => <<'_',
-
-In addition to space and tab.
-
-Example: `=:`.
-
-Note that the characters won't break words if inside quotes or escaped.
-
-_
             schema  => 'str*',
             pos => 1,
         },
@@ -173,7 +163,7 @@ sub break_cmdline_into_words {
         }
 
         if (index($word_breaks, $char) >= 0) {
-            if ($double_quoted || $single_quoted || $escaped) {
+            if ($escaped || $single_quoted || $double_quoted) {
                 $buf .= $char;
                 next;
             }
@@ -218,11 +208,25 @@ _
             schema => 'int*',
             pos => 1,
         },
+        word_breaks => {
+            summary => 'Extra characters to break word at',
+            description => <<'_',
+
+In addition to space and tab.
+
+Example: `=:`.
+
+Note that the characters won't break words if inside quotes or escaped.
+
+_
+            schema => 'str*',
+            pos => 2,
+        },
     },
     result_naked => 1,
 };
 sub parse_cmdline {
-    my ($line, $point) = @_;
+    my ($line, $point, $word_breaks) = @_;
 
     $line  //= $ENV{COMP_LINE};
     $point //= $ENV{COMP_POINT} // 0;
@@ -237,7 +241,7 @@ sub parse_cmdline {
 
     my @left;
     if (length($left)) {
-        @left = @{ break_cmdline_into_words($left) };
+        @left = @{ break_cmdline_into_words($left, $word_breaks) };
         # shave off $0
         substr($left, 0, length($left[0])) = "";
         $left =~ s/^\s+//;
@@ -248,7 +252,7 @@ sub parse_cmdline {
     if (length($right)) {
         # shave off the rest of the word at "cursor"
         $right =~ s/^\S+//;
-        @right = @{ break_cmdline_into_words($right) }
+        @right = @{ break_cmdline_into_words($right, $word_breaks) }
             if length($right);
     }
     #$log->tracef("\@left=%s, \@right=%s", \@left, \@right);
@@ -353,7 +357,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.02 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-17.
+This document describes version 0.03 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-17.
 
 =head1 DESCRIPTION
 
@@ -437,14 +441,6 @@ Arguments ('*' denotes required arguments):
 
 =item * B<word_breaks> => I<str>
 
-Extra characters to break word at.
-
-In addition to space and tab.
-
-Example: C<=:>.
-
-Note that the characters won't break words if inside quotes or escaped.
-
 =back
 
 Return value:
@@ -491,8 +487,8 @@ Return value:
 
 Make completion of paths behave more like shell.
 
-Note for users: normally you just need to use C<format_shell_completion()> and
-need not know about this function.
+Note for users: normally you just need to use C<format_completion()> and need not
+know about this function.
 
 This function employs a trick to make directory/path completion work more like
 shell's own. In shell, when completing directory, the sole completion for C<foo/>
@@ -540,6 +536,16 @@ Command-line, defaults to COMP_LINE environment.
 =item * B<point> => I<int>
 
 Point/position to complete in command-line, defaults to COMP_POINT.
+
+=item * B<word_breaks> => I<str>
+
+Extra characters to break word at.
+
+In addition to space and tab.
+
+Example: C<=:>.
+
+Note that the characters won't break words if inside quotes or escaped.
 
 =back
 

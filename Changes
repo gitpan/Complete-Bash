@@ -1,12 +1,17 @@
 Revision history for Complete-Bash
 
+0.03    2014-07-18 (SHARYANTO)
+
+        - Forgot to add 'word_breaks' argument to parse_cmdline().
+
+
 0.02    2014-07-17 (SHARYANTO)
 
         [ENHANCEMENTS]
 
         - Add error message if COMP_LINE is not set.
 
-        - Add option: 'word_breaks' to allow breaking at other characters, like
+        - Add argument 'word_breaks' to allow breaking at other characters, like
           bash's COMP_WORDBREAKS.
 
 
