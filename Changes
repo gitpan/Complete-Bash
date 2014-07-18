@@ -1,5 +1,12 @@
 Revision history for Complete-Bash
 
+0.05    2014-07-18 (SHARYANTO)
+
+        - No functional changes.
+
+        - Update Rinci metadata, rebuild POD.
+
+
 0.04    2014-07-18 (SHARYANTO)
 
         - Add examples for parse_cmdline().

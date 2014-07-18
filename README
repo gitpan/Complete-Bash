@@ -2,7 +2,7 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.04 of Complete::Bash (from Perl
+    This document describes version 0.05 of Complete::Bash (from Perl
     distribution Complete-Bash), released on 2014-07-18.
 
 DESCRIPTION
@@ -84,6 +84,8 @@ FUNCTIONS
 
     Return value:
 
+     (array)
+
   format_completion(@args) -> str
     Format completion for output to shell.
 
@@ -116,6 +118,8 @@ FUNCTIONS
 
     Return value:
 
+     (str)
+
   mimic_dir_completion(@args) -> array
     Make completion of paths behave more like shell.
 
@@ -142,7 +146,9 @@ FUNCTIONS
 
     Return value:
 
-  parse_cmdline(@args) -> any
+     (array)
+
+  parse_cmdline(@args) -> array
     Parse shell command-line for processing by completion routines.
 
     Examples:
@@ -177,11 +183,6 @@ FUNCTIONS
 
     Currently only supports bash.
 
-    Returns a list: ($words, $cword). $words is array of str, equivalent to
-    "COMP_WORDS" provided by shell to bash function. $cword is an integer,
-    equivalent to shell-provided "COMP_CWORD" variable to bash function. The
-    word to be completed is at "$words-"[$cword]>.
-
     Arguments ('*' denotes required arguments):
 
     *   cmdline => *str*
@@ -204,6 +205,13 @@ FUNCTIONS
         escaped.
 
     Return value:
+
+     (array)
+
+    Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
+    equivalent to `COMP_WORDS` provided by shell to bash function. `$cword`
+    is an integer, equivalent to shell-provided `COMP_CWORD` variable to
+    bash function. The word to be completed is at `$words->[$cword]`.
 
 SEE ALSO
     Complete

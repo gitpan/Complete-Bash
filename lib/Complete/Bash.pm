@@ -13,7 +13,7 @@ our @EXPORT_OK = qw(
                );
 
 our $DATE = '2014-07-18'; # DATE
-our $VERSION = '0.04'; # VERSION
+our $VERSION = '0.05'; # VERSION
 
 our %SPEC;
 
@@ -190,11 +190,6 @@ $SPEC{parse_cmdline} = {
 
 Currently only supports bash.
 
-Returns a list: ($words, $cword). $words is array of str, equivalent to
-`COMP_WORDS` provided by shell to bash function. $cword is an integer,
-equivalent to shell-provided `COMP_CWORD` variable to bash function. The word to
-be completed is at `$words->[$cword]`.
-
 _
     args_as => 'array',
     args => {
@@ -223,6 +218,17 @@ _
             schema => 'str*',
             pos => 2,
         },
+    },
+    result => {
+        schema => ['array*', len=>2],
+        description => <<'_',
+
+Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
+equivalent to `COMP_WORDS` provided by shell to bash function. `$cword` is an
+integer, equivalent to shell-provided `COMP_CWORD` variable to bash function.
+The word to be completed is at `$words->[$cword]`.
+
+_
     },
     result_naked => 1,
     examples => [
@@ -414,7 +420,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.04 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-18.
+This document describes version 0.05 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-18.
 
 =head1 DESCRIPTION
 
@@ -502,6 +508,8 @@ Arguments ('*' denotes required arguments):
 
 Return value:
 
+ (array)
+
 
 =head2 format_completion(@args) -> str
 
@@ -539,6 +547,8 @@ A hash containing list of completions and other metadata. For example:
 
 Return value:
 
+ (str)
+
 
 =head2 mimic_dir_completion(@args) -> array
 
@@ -571,8 +581,10 @@ Arguments ('*' denotes required arguments):
 
 Return value:
 
+ (array)
 
-=head2 parse_cmdline(@args) -> any
+
+=head2 parse_cmdline(@args) -> array
 
 Parse shell command-line for processing by completion routines.
 
@@ -617,11 +629,6 @@ Double quote protects word-breaking characters.
 
 Currently only supports bash.
 
-Returns a list: ($words, $cword). $words is array of str, equivalent to
-C<COMP_WORDS> provided by shell to bash function. $cword is an integer,
-equivalent to shell-provided C<COMP_CWORD> variable to bash function. The word to
-be completed is at C<$words->[$cword]>.
-
 Arguments ('*' denotes required arguments):
 
 =over 4
@@ -647,6 +654,13 @@ Note that the characters won't break words if inside quotes or escaped.
 =back
 
 Return value:
+
+ (array)
+
+Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
+equivalent to `COMP_WORDS` provided by shell to bash function. `$cword` is an
+integer, equivalent to shell-provided `COMP_CWORD` variable to bash function.
+The word to be completed is at `$words->[$cword]`.
 
 =head1 SEE ALSO
 
