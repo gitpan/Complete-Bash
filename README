@@ -2,8 +2,8 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.03 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-07-17.
+    This document describes version 0.04 of Complete::Bash (from Perl
+    distribution Complete-Bash), released on 2014-07-18.
 
 DESCRIPTION
     Bash allows completion to come from various sources. The simplest is
@@ -145,11 +145,42 @@ FUNCTIONS
   parse_cmdline(@args) -> any
     Parse shell command-line for processing by completion routines.
 
+    Examples:
+
+     parse_cmdline("cmd ", 4); # -> [[], 0]
+
+    The command (first word) is never included.
+
+     parse_cmdline("cmd -", 5); # -> [["-"], 0]
+     parse_cmdline("cmd - ", 6); # -> [["-"], 1]
+     parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
+     parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
+     parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
+     parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
+     parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
+     parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
+
+    Other word-breaking characters (other than whitespace) is not used by
+    default.
+
+     parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
+
+    Breaking at '=' too.
+
+     parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
+
+    Breaking at '=' too (2).
+
+     parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
+
+    Double quote protects word-breaking characters.
+
     Currently only supports bash.
 
     Returns a list: ($words, $cword). $words is array of str, equivalent to
     "COMP_WORDS" provided by shell to bash function. $cword is an integer,
-    equivalent to shell-provided "COMP_CWORD" variable to bash function.
+    equivalent to shell-provided "COMP_CWORD" variable to bash function. The
+    word to be completed is at "$words-"[$cword]>.
 
     Arguments ('*' denotes required arguments):
 

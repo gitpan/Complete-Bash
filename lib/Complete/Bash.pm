@@ -12,8 +12,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-17'; # DATE
-our $VERSION = '0.03'; # VERSION
+our $DATE = '2014-07-18'; # DATE
+our $VERSION = '0.04'; # VERSION
 
 our %SPEC;
 
@@ -192,7 +192,8 @@ Currently only supports bash.
 
 Returns a list: ($words, $cword). $words is array of str, equivalent to
 `COMP_WORDS` provided by shell to bash function. $cword is an integer,
-equivalent to shell-provided `COMP_CWORD` variable to bash function.
+equivalent to shell-provided `COMP_CWORD` variable to bash function. The word to
+be completed is at `$words->[$cword]`.
 
 _
     args_as => 'array',
@@ -224,6 +225,62 @@ _
         },
     },
     result_naked => 1,
+    examples => [
+        {
+            argv    => ['cmd ', 4],
+            result  => [[], 0],
+            summary => 'The command (first word) is never included',
+        },
+        {
+            argv    => ['cmd -', 5],
+            result  => [['-'], 0],
+        },
+        {
+            argv    => ['cmd - ', 6],
+            result  => [['-'], 1],
+        },
+        {
+            argv    => ['cmd --opt val', 6],
+            result  => [['--', 'val'], 0],
+        },
+        {
+            argv    => ['cmd --opt val', 9],
+            result  => [['--opt', 'val'], 0],
+        },
+        {
+            argv    => ['cmd --opt val', 10],
+            result  => [['--opt'], 1],
+        },
+        {
+            argv    => ['cmd --opt val', 13],
+            result  => [['--opt', 'val'], 1],
+        },
+        {
+            argv    => ['cmd --opt val ', 14],
+            result  => [['--opt', 'val'], 2],
+        },
+        {
+            argv    => ['cmd --opt=val', 13],
+            result  => [['--opt=val'], 0],
+            summary => 'Other word-breaking characters (other than whitespace)'.
+                ' is not used by default',
+        },
+        {
+            argv    => ['cmd --opt=val', 13, '='],
+            result  => [['--opt', 'val'], 1],
+            summary => "Breaking at '=' too",
+        },
+        {
+            argv    => ['cmd --opt=val ', 14, '='],
+            result  => [['--opt', 'val'], 2],
+            summary => "Breaking at '=' too (2)",
+        },
+        {
+            argv    => ['cmd "--opt=val', 13],
+            result  => [['--opt=va'], 0],
+            summary => 'Double quote protects word-breaking characters',
+        },
+    ],
 };
 sub parse_cmdline {
     my ($line, $point, $word_breaks) = @_;
@@ -269,7 +326,7 @@ sub parse_cmdline {
     if (defined($tmp)) { $nspc_lastw++ while $tmp =~ s/\s$// }
     $cword++ if $nspc_lastw < $nspc_left;
 
-    return ($words, $cword);
+    return [$words, $cword];
 }
 
 $SPEC{format_completion} = {
@@ -357,7 +414,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.03 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-17.
+This document describes version 0.04 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-18.
 
 =head1 DESCRIPTION
 
@@ -519,11 +576,51 @@ Return value:
 
 Parse shell command-line for processing by completion routines.
 
+Examples:
+
+ parse_cmdline("cmd ", 4); # -> [[], 0]
+
+
+The command (first word) is never included.
+
+
+ parse_cmdline("cmd -", 5); # -> [["-"], 0]
+ parse_cmdline("cmd - ", 6); # -> [["-"], 1]
+ parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
+ parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
+ parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
+ parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
+ parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
+ parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
+
+
+Other word-breaking characters (other than whitespace) is not used by default.
+
+
+ parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
+
+
+Breaking at '=' too.
+
+
+ parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
+
+
+Breaking at '=' too (2).
+
+
+ parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
+
+
+Double quote protects word-breaking characters.
+
+
 Currently only supports bash.
 
 Returns a list: ($words, $cword). $words is array of str, equivalent to
 C<COMP_WORDS> provided by shell to bash function. $cword is an integer,
-equivalent to shell-provided C<COMP_CWORD> variable to bash function.
+equivalent to shell-provided C<COMP_CWORD> variable to bash function. The word to
+be completed is at C<$words->[$cword]>.
 
 Arguments ('*' denotes required arguments):
 

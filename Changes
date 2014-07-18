@@ -1,5 +1,15 @@
 Revision history for Complete-Bash
 
+0.04    2014-07-18 (SHARYANTO)
+
+        - Add examples for parse_cmdline().
+
+        [INCOMPATIBLE CHANGES]
+
+        - Return 2-element arrayref instead of 2-element list (in general, I
+          want to avoid returning list for better interop with Rinci).
+
+
 0.03    2014-07-18 (SHARYANTO)
 
         - Forgot to add 'word_breaks' argument to parse_cmdline().
