@@ -1,5 +1,28 @@
 Revision history for Complete-Bash
 
+0.06    2014-07-19 (SHARYANTO)
+
+        [REMOVED FEATURES]
+
+        - Remove mimic_dir_completion(). Functionality is now moved into
+          format_completion().
+
+        [INCOMPATIBLE CHANGES]
+
+        - format_completion(): remove 'is_path' key (setting 'path_sep'
+          automatically enables path mode), rename 'type' to 'escmode' (rename
+          escape mode 'env' to 'shellvar', add 'default' and 'none' modes).
+
+        [ENHANCEMENTS]
+
+        - format_completion(): Recognize key 'as' to return completion as array.
+          Useful for using under Term::ReadLine (e.g. in App::riap).
+
+        [DOCUMENTATION]
+
+        - Explain more about path mode.
+
+
 0.05    2014-07-18 (SHARYANTO)
 
         - No functional changes.
