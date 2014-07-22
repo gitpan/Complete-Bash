@@ -2,8 +2,8 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.06 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-07-19.
+    This document describes version 0.07 of Complete::Bash (from Perl
+    distribution Complete-Bash), released on 2014-07-22.
 
 DESCRIPTION
     Bash allows completion to come from various sources. The simplest is
@@ -84,6 +84,8 @@ FUNCTIONS
 
     Return value:
 
+     (array)
+
   format_completion(@args) -> array|str
     Format completion for output (for shell).
 
@@ -114,31 +116,34 @@ FUNCTIONS
         completing/drilling-down path. Below is the description of "path
         mode".
 
-          In shell, when completing filename (e.g. C<foo>) and there is only a single
-          possible completion (e.g. C<foo> or C<foo.txt>), the shell will display the
-          completion in the buffer and automatically add a space so the user can move to
-          the next argument. This is also true when completing other values like
-          variables or program names.
+        In shell, when completing filename (e.g. "foo") and there is only a
+        single possible completion (e.g. "foo" or "foo.txt"), the shell will
+        display the completion in the buffer and automatically add a space
+        so the user can move to the next argument. This is also true when
+        completing other values like variables or program names.
 
-          However, when completing directory (e.g. C</et> or C<Downloads>) and there is
-          solely a single completion possible and it is a directory (e.g. C</etc> or
-          C<Downloads>), the shell automatically adds the path separator character
-          instead (C</etc/> or C<Downloads/>). The user can press Tab again to complete
-          for files/directories inside that directory, and so on. This is obviously more
-          convenient compared to when shell adds a space instead.
+        However, when completing directory (e.g. "/et" or "Downloads") and
+        there is solely a single completion possible and it is a directory
+        (e.g. "/etc" or "Downloads"), the shell automatically adds the path
+        separator character instead ("/etc/" or "Downloads/"). The user can
+        press Tab again to complete for files/directories inside that
+        directory, and so on. This is obviously more convenient compared to
+        when shell adds a space instead.
 
-          The C<path_sep> option, when set, will employ a trick to mimic this behaviour.
-          The trick is, if you have a completion array of C<['foo/']>, it will be changed
-          to C<['foo/', 'foo/ ']> (the second element is the first element with added
-          space at the end) to prevent bash from adding a space automatically.
+        The "path_sep" option, when set, will employ a trick to mimic this
+        behaviour. The trick is, if you have a completion array of
+        "['foo/']", it will be changed to "['foo/', 'foo/ ']" (the second
+        element is the first element with added space at the end) to prevent
+        bash from adding a space automatically.
 
-          Path mode is not restricted to completing filesystem paths. Anything path-like
-          can use it. For example when you are completing Java or Perl package name
-          (e.g. C<com.company.product.whatever> or C<File::Spec::Unix>) you can use this
-          mode (with C<path_sep> appropriately set to, e.g. C<.> or C<::>). But note that
-          in the case of C<::> since colon is a word-breaking character in Bash by
-          default, when typing you'll need to escape it (e.g. C<mpath File\:\:Sp<tab>>)
-          or use it inside quotes (e.g. C<mpath "File::Sp<tab>>).
+        Path mode is not restricted to completing filesystem paths. Anything
+        path-like can use it. For example when you are completing Java or
+        Perl package name (e.g. "com.company.product.whatever" or
+        "File::Spec::Unix") you can use this mode (with "path_sep"
+        appropriately set to, e.g. "." or "::"). But note that in the case
+        of "::" since colon is a word-breaking character in Bash by default,
+        when typing you'll need to escape it (e.g. "mpath File\:\:Sp<tab>")
+        or use it inside quotes (e.g. "mpath "File::Sp<tab>").
 
     Arguments ('*' denotes required arguments):
 
@@ -157,31 +162,31 @@ FUNCTIONS
 
     Examples:
 
-     parse_cmdline( cmdline => "cmd ", point => 4); # -> [[], 0]
+     parse_cmdline("cmd ", 4); # -> [[], 0]
 
     The command (first word) is never included.
 
-     parse_cmdline( cmdline => "cmd -", point => 5); # -> [["-"], 0]
-     parse_cmdline( cmdline => "cmd - ", point => 6); # -> [["-"], 1]
-     parse_cmdline( cmdline => "cmd --opt val", point => 6); # -> [["--", "val"], 0]
-     parse_cmdline( cmdline => "cmd --opt val", point => 9); # -> [["--opt", "val"], 0]
-     parse_cmdline( cmdline => "cmd --opt val", point => 10); # -> [["--opt"], 1]
-     parse_cmdline( cmdline => "cmd --opt val", point => 13); # -> [["--opt", "val"], 1]
-     parse_cmdline( cmdline => "cmd --opt val ", point => 14); # -> [["--opt", "val"], 2]
-     parse_cmdline( cmdline => "cmd --opt=val", point => 13); # -> [["--opt=val"], 0]
+     parse_cmdline("cmd -", 5); # -> [["-"], 0]
+     parse_cmdline("cmd - ", 6); # -> [["-"], 1]
+     parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
+     parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
+     parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
+     parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
+     parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
+     parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
 
     Other word-breaking characters (other than whitespace) is not used by
     default.
 
-     parse_cmdline( cmdline => "cmd --opt=val", point => 13, word_breaks => "=");
+     parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
 
-    Result: "[["--opt", "val"], 1]". Breaking at '=' too.
+    Breaking at '=' too.
 
-     parse_cmdline( cmdline => "cmd --opt=val ", point => 14, word_breaks => "=");
+     parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
 
-    Result: "[["--opt", "val"], 2]". Breaking at '=' too (2).
+    Breaking at '=' too (2).
 
-     parse_cmdline( cmdline => "cmd \"--opt=val", point => 13); # -> [["--opt=va"], 0]
+     parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
 
     Double quote protects word-breaking characters.
 
@@ -209,6 +214,13 @@ FUNCTIONS
         escaped.
 
     Return value:
+
+     (array)
+
+    Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
+    equivalent to `COMP_WORDS` provided by shell to bash function. `$cword`
+    is an integer, equivalent to shell-provided `COMP_CWORD` variable to
+    bash function. The word to be completed is at `$words->[$cword]`.
 
 TODOS
     Accept regex for path_sep.

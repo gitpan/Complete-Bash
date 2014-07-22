@@ -11,8 +11,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-19'; # DATE
-our $VERSION = '0.06'; # VERSION
+our $DATE = '2014-07-22'; # DATE
+our $VERSION = '0.07'; # VERSION
 
 our %SPEC;
 
@@ -413,7 +413,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.06 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-19.
+This document describes version 0.07 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-22.
 
 =head1 DESCRIPTION
 
@@ -501,6 +501,8 @@ Arguments ('*' denotes required arguments):
 
 Return value:
 
+ (array)
+
 
 =head2 format_completion(@args) -> array|str
 
@@ -516,64 +518,48 @@ as other metadata for formatting hints). Known keys:
 
 =over
 
-=item *
+=item * C<completion> (array): The completion array. You can put the result of
+C<complete_*> function here.
 
-C<completion> (array): The completion array. You can put the result of
-  C<complete_*> function here.
+=item * C<as> (str): Either C<string> (the default) or C<array> (to return array of lines
+instead of the lines joined together). Returning array is useful if you are
+doing completion inside C<Term::ReadLine>, for example, where the library
+expects an array.
 
+=item * C<escmode> (str): Escaping mode for entries. Either C<default> (most
+nonalphanumeric characters will be escaped), C<shellvar> (like C<default>, but
+dollar sign C<$> will not be escaped, convenient when completing environment
+variables for example), C<filename> (currently equals to C<default>), C<option>
+(currently equals to C<default>), or C<none> (no escaping will be done).
 
+=item * C<path_sep> (str): If set, will enable "path mode", useful for
+completing/drilling-down path. Below is the description of "path mode".
 
-=item *
+In shell, when completing filename (e.g. C<foo>) and there is only a single
+possible completion (e.g. C<foo> or C<foo.txt>), the shell will display the
+completion in the buffer and automatically add a space so the user can move to
+the next argument. This is also true when completing other values like
+variables or program names.
 
-C<as> (str): Either C<string> (the default) or C<array> (to return array of lines
-  instead of the lines joined together). Returning array is useful if you are
-  doing completion inside C<Term::ReadLine>, for example, where the library
-  expects an array.
+However, when completing directory (e.g. C</et> or C<Downloads>) and there is
+solely a single completion possible and it is a directory (e.g. C</etc> or
+C<Downloads>), the shell automatically adds the path separator character
+instead (C</etc/> or C<Downloads/>). The user can press Tab again to complete
+for files/directories inside that directory, and so on. This is obviously more
+convenient compared to when shell adds a space instead.
 
+The C<path_sep> option, when set, will employ a trick to mimic this behaviour.
+The trick is, if you have a completion array of C<['foo/']>, it will be changed
+to C<['foo/', 'foo/ ']> (the second element is the first element with added
+space at the end) to prevent bash from adding a space automatically.
 
-
-=item *
-
-C<escmode> (str): Escaping mode for entries. Either C<default> (most
-  nonalphanumeric characters will be escaped), C<shellvar> (like C<default>, but
-  dollar sign C<$> will not be escaped, convenient when completing environment
-  variables for example), C<filename> (currently equals to C<default>), C<option>
-  (currently equals to C<default>), or C<none> (no escaping will be done).
-
-
-
-=item *
-
-C<path_sep> (str): If set, will enable "path mode", useful for
-  completing/drilling-down path. Below is the description of "path mode".
-
-  In shell, when completing filename (e.g. C<foo>) and there is only a single
-  possible completion (e.g. C<foo> or C<foo.txt>), the shell will display the
-  completion in the buffer and automatically add a space so the user can move to
-  the next argument. This is also true when completing other values like
-  variables or program names.
-
-  However, when completing directory (e.g. C</et> or C<Downloads>) and there is
-  solely a single completion possible and it is a directory (e.g. C</etc> or
-  C<Downloads>), the shell automatically adds the path separator character
-  instead (C</etc/> or C<Downloads/>). The user can press Tab again to complete
-  for files/directories inside that directory, and so on. This is obviously more
-  convenient compared to when shell adds a space instead.
-
-  The C<path_sep> option, when set, will employ a trick to mimic this behaviour.
-  The trick is, if you have a completion array of C<['foo/']>, it will be changed
-  to C<['foo/', 'foo/ ']> (the second element is the first element with added
-  space at the end) to prevent bash from adding a space automatically.
-
-  Path mode is not restricted to completing filesystem paths. Anything path-like
-  can use it. For example when you are completing Java or Perl package name
-  (e.g. C<com.company.product.whatever> or C<File::Spec::Unix>) you can use this
-  mode (with C<path_sep> appropriately set to, e.g. C<.> or C<::>). But note that
-  in the case of C<::> since colon is a word-breaking character in Bash by
-  default, when typing you'll need to escape it (e.g. C<mpath File\:\:Sp<tab>>)
-  or use it inside quotes (e.g. C<mpath "File::Sp<tab>>).
-
-
+Path mode is not restricted to completing filesystem paths. Anything path-like
+can use it. For example when you are completing Java or Perl package name
+(e.g. C<com.company.product.whatever> or C<File::Spec::Unix>) you can use this
+mode (with C<path_sep> appropriately set to, e.g. C<.> or C<::>). But note that
+in the case of C<::> since colon is a word-breaking character in Bash by
+default, when typing you'll need to escape it (e.g. C<< mpath File\:\:SpE<lt>tabE<gt> >>)
+or use it inside quotes (e.g. C<< mpath "File::SpE<lt>tabE<gt> >>).
 
 =back
 
@@ -593,46 +579,45 @@ Return value:
 
 Formatted string (or array, if `as` is set to `array`) (any)
 
+
 =head2 parse_cmdline(@args) -> array
 
 Parse shell command-line for processing by completion routines.
 
 Examples:
 
- parse_cmdline( cmdline => "cmd ", point => 4); # -> [[], 0]
+ parse_cmdline("cmd ", 4); # -> [[], 0]
 
 
 The command (first word) is never included.
 
 
- parse_cmdline( cmdline => "cmd -", point => 5); # -> [["-"], 0]
- parse_cmdline( cmdline => "cmd - ", point => 6); # -> [["-"], 1]
- parse_cmdline( cmdline => "cmd --opt val", point => 6); # -> [["--", "val"], 0]
- parse_cmdline( cmdline => "cmd --opt val", point => 9); # -> [["--opt", "val"], 0]
- parse_cmdline( cmdline => "cmd --opt val", point => 10); # -> [["--opt"], 1]
- parse_cmdline( cmdline => "cmd --opt val", point => 13); # -> [["--opt", "val"], 1]
- parse_cmdline( cmdline => "cmd --opt val ", point => 14); # -> [["--opt", "val"], 2]
- parse_cmdline( cmdline => "cmd --opt=val", point => 13); # -> [["--opt=val"], 0]
+ parse_cmdline("cmd -", 5); # -> [["-"], 0]
+ parse_cmdline("cmd - ", 6); # -> [["-"], 1]
+ parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
+ parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
+ parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
+ parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
+ parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
+ parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
 
 
 Other word-breaking characters (other than whitespace) is not used by default.
 
 
- parse_cmdline( cmdline => "cmd --opt=val", point => 13, word_breaks => "=");
+ parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
 
 
-Result: C<< [["--opt", "val"], 1] >>.
 Breaking at '=' too.
 
 
- parse_cmdline( cmdline => "cmd --opt=val ", point => 14, word_breaks => "=");
+ parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
 
 
-Result: C<< [["--opt", "val"], 2] >>.
 Breaking at '=' too (2).
 
 
- parse_cmdline( cmdline => "cmd \"--opt=val", point => 13); # -> [["--opt=va"], 0]
+ parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
 
 
 Double quote protects word-breaking characters.
@@ -665,6 +650,13 @@ Note that the characters won't break words if inside quotes or escaped.
 =back
 
 Return value:
+
+ (array)
+
+Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
+equivalent to `COMP_WORDS` provided by shell to bash function. `$cword` is an
+integer, equivalent to shell-provided `COMP_CWORD` variable to bash function.
+The word to be completed is at `$words->[$cword]`.
 
 =head1 TODOS
 
