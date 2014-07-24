@@ -25,7 +25,7 @@ is_deeply(
 );
 is_deeply(
     parse_cmdline("foo bar --baz=2 qux", 4, "="),
-    [[qw/--baz 2 qux/], 0],
+    [[qw/--baz = 2 qux/], 0],
     "word_breaks 1",
 );
 

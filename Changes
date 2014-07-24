@@ -1,5 +1,15 @@
 Revision history for Complete-Bash
 
+0.08    2014-07-23 (SHARYANTO)
+
+        [INCOMPATIBLE CHANGES]
+
+        - break_cmdline_into_words() now injects word-breaking characters into
+          the words array, to follow bash more closely. For example,
+          break_cmdline_into_words('--foo 1 --bar=2', ':=') now results in
+          [qw/--foo 1 --bar = 2/].
+
+
 0.07    2014-07-22 (SHARYANTO)
 
         - No functional changes.

@@ -20,12 +20,12 @@ subtest basics => sub {
 };
 
 subtest word_breaks => sub {
-    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b=], "=:"), [qw/a b/]);
-    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b=c], "=:"), [qw/a b c/]);
+    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b=], "=:"), [qw/a b =/]);
+    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b=c], "=:"), [qw/a b = c/]);
     is_deeply(Complete::Bash::break_cmdline_into_words(q[a b\=], "=:"), [qw/a b=/]);
     is_deeply(Complete::Bash::break_cmdline_into_words(q[a "b="], "=:"), [qw/a b=/]);
     is_deeply(Complete::Bash::break_cmdline_into_words(q[a 'b='], "=:"), [qw/a b=/]);
-    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b:c=d], "=:"), [qw/a b c d/]);
+    is_deeply(Complete::Bash::break_cmdline_into_words(q[a b:c=d], "=:"), [qw/a b : c = d/]);
 };
 
 DONE_TESTING:

@@ -11,8 +11,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-22'; # DATE
-our $VERSION = '0.07'; # VERSION
+our $DATE = '2014-07-23'; # DATE
+our $VERSION = '0.08'; # VERSION
 
 our %SPEC;
 
@@ -121,6 +121,7 @@ sub break_cmdline_into_words {
                 next;
             }
             push @argv, $buf if defined $buf;
+            push @argv, $char;
             undef $buf;
             next;
         }
@@ -226,16 +227,16 @@ _
         },
         {
             argv    => ['cmd --opt=val', 13, '='],
-            result  => [['--opt', 'val'], 1],
+            result  => [['--opt', '=', 'val'], 2],
             summary => "Breaking at '=' too",
         },
         {
             argv    => ['cmd --opt=val ', 14, '='],
-            result  => [['--opt', 'val'], 2],
+            result  => [['--opt', '=', 'val'], 3],
             summary => "Breaking at '=' too (2)",
         },
         {
-            argv    => ['cmd "--opt=val', 13],
+            argv    => ['cmd "--opt=val', 13, '='],
             result  => [['--opt=va'], 0],
             summary => 'Double quote protects word-breaking characters',
         },
@@ -413,7 +414,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.07 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-22.
+This document describes version 0.08 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-23.
 
 =head1 DESCRIPTION
 
@@ -468,7 +469,7 @@ L<Complete::BashGen>.
 =head1 FUNCTIONS
 
 
-=head2 break_cmdline_into_words(@args) -> array
+=head2 break_cmdline_into_words($cmdline, $word_breaks) -> array
 
 Break command-line string into words.
 
@@ -504,7 +505,7 @@ Return value:
  (array)
 
 
-=head2 format_completion(@args) -> array|str
+=head2 format_completion($shell_completion) -> array|str
 
 Format completion for output (for shell).
 
@@ -580,7 +581,7 @@ Return value:
 Formatted string (or array, if `as` is set to `array`) (any)
 
 
-=head2 parse_cmdline(@args) -> array
+=head2 parse_cmdline($cmdline, $point, $word_breaks) -> array
 
 Parse shell command-line for processing by completion routines.
 
@@ -605,19 +606,19 @@ The command (first word) is never included.
 Other word-breaking characters (other than whitespace) is not used by default.
 
 
- parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
+ parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "=", "val"], 2]
 
 
 Breaking at '=' too.
 
 
- parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
+ parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "=", "val"], 3]
 
 
 Breaking at '=' too (2).
 
 
- parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
+ parse_cmdline("cmd \"--opt=val", 13, "="); # -> [["--opt=va"], 0]
 
 
 Double quote protects word-breaking characters.

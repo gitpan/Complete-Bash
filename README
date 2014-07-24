@@ -2,8 +2,8 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.07 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-07-22.
+    This document describes version 0.08 of Complete::Bash (from Perl
+    distribution Complete-Bash), released on 2014-07-23.
 
 DESCRIPTION
     Bash allows completion to come from various sources. The simplest is
@@ -56,7 +56,7 @@ DESCRIPTION
     for you. See Complete::BashGen.
 
 FUNCTIONS
-  break_cmdline_into_words(@args) -> array
+  break_cmdline_into_words($cmdline, $word_breaks) -> array
     Break command-line string into words.
 
     Note to users: this is an internal function. Normally you only need to
@@ -86,7 +86,7 @@ FUNCTIONS
 
      (array)
 
-  format_completion(@args) -> array|str
+  format_completion($shell_completion) -> array|str
     Format completion for output (for shell).
 
     Bash accepts completion reply in the form of one entry per line to
@@ -157,7 +157,7 @@ FUNCTIONS
 
     Formatted string (or array, if `as` is set to `array`) (any)
 
-  parse_cmdline(@args) -> array
+  parse_cmdline($cmdline, $point, $word_breaks) -> array
     Parse shell command-line for processing by completion routines.
 
     Examples:
@@ -178,15 +178,15 @@ FUNCTIONS
     Other word-breaking characters (other than whitespace) is not used by
     default.
 
-     parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "val"], 1]
+     parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "=", "val"], 2]
 
     Breaking at '=' too.
 
-     parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "val"], 2]
+     parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "=", "val"], 3]
 
     Breaking at '=' too (2).
 
-     parse_cmdline("cmd \"--opt=val", 13); # -> [["--opt=va"], 0]
+     parse_cmdline("cmd \"--opt=val", 13, "="); # -> [["--opt=va"], 0]
 
     Double quote protects word-breaking characters.
 
