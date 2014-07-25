@@ -1,5 +1,13 @@
 Revision history for Complete-Bash
 
+0.10    2014-07-25 (SHARYANTO)
+
+        - No functional changes.
+
+        - Add documentation about new parse_cmdline() not stripping first word,
+          and thus some client code will need to shift @$words + $cword--.
+
+
 0.09    2014-07-25 (SHARYANTO)
 
         [INCOMPATIBLE CHANGES]

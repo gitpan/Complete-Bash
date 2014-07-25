@@ -2,7 +2,7 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.09 of Complete::Bash (from Perl
+    This document describes version 0.10 of Complete::Bash (from Perl
     distribution Complete-Bash), released on 2014-07-25.
 
 DESCRIPTION
@@ -171,6 +171,10 @@ FUNCTIONS
     equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword`
     is an integer, equivalent to `COMP_CWORD` provided by bash to shell
     functions. The word to be completed is at `$words->[$cword]`.
+
+    Note that COMP_LINE includes the command name. If you want the
+    command-line arguments only (like in `@ARGV`), you need to strip the
+    first element from `$words` and reduce `$cword` by 1.
 
 TODOS
     format_completion(): Accept regex for path_sep.

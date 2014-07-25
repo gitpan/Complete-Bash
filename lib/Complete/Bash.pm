@@ -12,7 +12,7 @@ our @EXPORT_OK = qw(
                );
 
 our $DATE = '2014-07-25'; # DATE
-our $VERSION = '0.09'; # VERSION
+our $VERSION = '0.10'; # VERSION
 
 our %SPEC;
 
@@ -71,6 +71,11 @@ Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
 equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword` is an
 integer, equivalent to `COMP_CWORD` provided by bash to shell functions. The
 word to be completed is at `$words->[$cword]`.
+
+Note that COMP_LINE includes the command name. If you want the command-line
+arguments only (like in `@ARGV`), you need to strip the first element from
+`$words` and reduce `$cword` by 1.
+
 
 _
     },
@@ -326,7 +331,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.09 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-25.
+This document describes version 0.10 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-25.
 
 =head1 DESCRIPTION
 
@@ -504,6 +509,10 @@ Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
 equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword` is an
 integer, equivalent to `COMP_CWORD` provided by bash to shell functions. The
 word to be completed is at `$words->[$cword]`.
+
+Note that COMP_LINE includes the command name. If you want the command-line
+arguments only (like in `@ARGV`), you need to strip the first element from
+`$words` and reduce `$cword` by 1.
 
 =head1 TODOS
 
