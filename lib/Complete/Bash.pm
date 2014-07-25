@@ -11,138 +11,22 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-23'; # DATE
-our $VERSION = '0.08'; # VERSION
+our $DATE = '2014-07-25'; # DATE
+our $VERSION = '0.09'; # VERSION
 
 our %SPEC;
-
-$SPEC{break_cmdline_into_words} = {
-    v => 1.1,
-    summary => 'Break command-line string into words',
-    description => <<'_',
-
-Note to users: this is an internal function. Normally you only need to use
-`parse_cmdline`.
-
-The first step of shell completion is to break the command-line string
-(e.g. from COMP_LINE in bash) into words.
-
-Bash by default split using these characters (from COMP_WORDBREAKS):
-
- COMP_WORDBREAKS=$' \t\n"\'@><=;|&(:'
-
-We don't necessarily want to split using default bash's rule, for example in
-Perl we might want to complete module names which contain colons (e.g.
-`Module::Path`).
-
-By default, this routine splits by spaces and tabs and takes into account
-backslash and quoting. Unclosed quotes won't generate error.
-
-_
-    args_as => 'array',
-    args => {
-        cmdline => {
-            schema => 'str*',
-            req => 1,
-            pos => 0,
-        },
-        word_breaks => {
-            schema  => 'str*',
-            pos => 1,
-        },
-    },
-    result_naked => 1,
-    result => {
-        schema => 'array*',
-    },
-};
-sub break_cmdline_into_words {
-    my ($cmdline, $word_breaks) = @_;
-
-    $word_breaks //= '';
-
-    # BEGIN stolen from Parse::CommandLine, with some mods
-    $cmdline =~ s/\A\s+//ms;
-    $cmdline =~ s/\s+\z//ms;
-
-    my @argv;
-    my $buf;
-    my $escaped;
-    my $double_quoted;
-    my $single_quoted;
-
-    for my $char (split //, $cmdline) {
-        if ($escaped) {
-            $buf .= $char;
-            $escaped = undef;
-            next;
-        }
-
-        if ($char eq '\\') {
-            if ($single_quoted) {
-                $buf .= $char;
-            } else {
-                $escaped = 1;
-            }
-            next;
-        }
-
-        if ($char =~ /\s/) {
-            if ($single_quoted || $double_quoted) {
-                $buf .= $char;
-            } else {
-                push @argv, $buf if defined $buf;
-                undef $buf;
-            }
-            next;
-        }
-
-        if ($char eq '"') {
-            if ($single_quoted) {
-                $buf .= $char;
-                next;
-            }
-            $double_quoted = !$double_quoted;
-            next;
-        }
-
-        if ($char eq "'") {
-            if ($double_quoted) {
-                $buf .= $char;
-                next;
-            }
-            $single_quoted = !$single_quoted;
-            next;
-        }
-
-        if (index($word_breaks, $char) >= 0) {
-            if ($escaped || $single_quoted || $double_quoted) {
-                $buf .= $char;
-                next;
-            }
-            push @argv, $buf if defined $buf;
-            push @argv, $char;
-            undef $buf;
-            next;
-        }
-
-        $buf .= $char;
-    }
-    push @argv, $buf if defined $buf;
-
-    #if ($escaped || $single_quoted || $double_quoted) {
-    #    die 'invalid command line string';
-    #}
-    \@argv;
-    # END stolen from Parse::CommandLine
-}
 
 $SPEC{parse_cmdline} = {
     v => 1.1,
     summary => 'Parse shell command-line for processing by completion routines',
     description => <<'_',
 
-Currently only supports bash.
+Currently only supports bash. This function basically converts COMP_LINE (str)
+and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD (int), like
+what bash supplies to shell functions. The differences with bash are: 1) quotes
+and backslashes are by default stripped, unless you specify `preserve_quotes`;
+2) no word-breaking characters aside from whitespaces are used, unless you
+specify more word-breaking characters by setting `word_breaks`.
 
 _
     args_as => 'array',
@@ -169,8 +53,14 @@ Example: `=:`.
 Note that the characters won't break words if inside quotes or escaped.
 
 _
-            schema => 'str*',
+            schema => 'str',
             pos => 2,
+        },
+        preserve_quotes => {
+            summary => 'Whether to preserve quotes, like bash does',
+            schema => 'bool',
+            default => 0,
+            pos => 3,
         },
     },
     result => {
@@ -178,115 +68,137 @@ _
         description => <<'_',
 
 Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
-equivalent to `COMP_WORDS` provided by shell to bash function. `$cword` is an
-integer, equivalent to shell-provided `COMP_CWORD` variable to bash function.
-The word to be completed is at `$words->[$cword]`.
+equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword` is an
+integer, equivalent to `COMP_CWORD` provided by bash to shell functions. The
+word to be completed is at `$words->[$cword]`.
 
 _
     },
     result_naked => 1,
-    examples => [
-        {
-            argv    => ['cmd ', 4],
-            result  => [[], 0],
-            summary => 'The command (first word) is never included',
-        },
-        {
-            argv    => ['cmd -', 5],
-            result  => [['-'], 0],
-        },
-        {
-            argv    => ['cmd - ', 6],
-            result  => [['-'], 1],
-        },
-        {
-            argv    => ['cmd --opt val', 6],
-            result  => [['--', 'val'], 0],
-        },
-        {
-            argv    => ['cmd --opt val', 9],
-            result  => [['--opt', 'val'], 0],
-        },
-        {
-            argv    => ['cmd --opt val', 10],
-            result  => [['--opt'], 1],
-        },
-        {
-            argv    => ['cmd --opt val', 13],
-            result  => [['--opt', 'val'], 1],
-        },
-        {
-            argv    => ['cmd --opt val ', 14],
-            result  => [['--opt', 'val'], 2],
-        },
-        {
-            argv    => ['cmd --opt=val', 13],
-            result  => [['--opt=val'], 0],
-            summary => 'Other word-breaking characters (other than whitespace)'.
-                ' is not used by default',
-        },
-        {
-            argv    => ['cmd --opt=val', 13, '='],
-            result  => [['--opt', '=', 'val'], 2],
-            summary => "Breaking at '=' too",
-        },
-        {
-            argv    => ['cmd --opt=val ', 14, '='],
-            result  => [['--opt', '=', 'val'], 3],
-            summary => "Breaking at '=' too (2)",
-        },
-        {
-            argv    => ['cmd "--opt=val', 13, '='],
-            result  => [['--opt=va'], 0],
-            summary => 'Double quote protects word-breaking characters',
-        },
-    ],
 };
 sub parse_cmdline {
-    my ($line, $point, $word_breaks) = @_;
+    my ($line, $point, $word_breaks, $preserve_quotes) = @_;
 
     $line  //= $ENV{COMP_LINE};
     $point //= $ENV{COMP_POINT} // 0;
+    $word_breaks //= '';
 
     die "$0: COMP_LINE not set, make sure this script is run under ".
         "bash completion (e.g. through complete -C)\n" unless defined $line;
 
-    my $left  = substr($line, 0, $point);
-    my $right = substr($line, $point);
-    #$log->tracef("line=<%s>, point=%s, left=<%s>, right=<%s>",
-    #             $line, $point, $left, $right);
+    my $pos = 0;
+    my $len = length($line);
+    # first word is ltrim-ed by bash
+    $line =~ s/\A(\s+)//gs and $pos += length($1);
 
-    my @left;
-    if (length($left)) {
-        @left = @{ break_cmdline_into_words($left, $word_breaks) };
-        # shave off $0
-        substr($left, 0, length($left[0])) = "";
-        $left =~ s/^\s+//;
-        shift @left;
+    my @words;
+    my $buf;
+    my $cword;
+    my $escaped;
+    my $inserted_empty_word;
+    my $double_quoted;
+    my $single_quoted;
+
+    my @chars = split //, $line;
+    $pos--;
+    for my $char (@chars) {
+        $pos++;
+        #say "D:pos=$pos, char=$char, \@words=[".join(", ", @words)."]";
+        if (!defined($cword) && $pos == $point) {
+            $cword = @words;
+            #say "D:setting cword to $cword";
+        }
+
+        if ($escaped) {
+            $buf .= $preserve_quotes ? "\\$char" : $char;
+            $escaped = undef;
+            next;
+        }
+
+        if ($char eq '\\') {
+            if ($single_quoted) {
+                $buf .= $char;
+            } else {
+                $escaped = 1;
+            }
+            next;
+        }
+
+        if ($char =~ /\s/) {
+            if ($single_quoted || $double_quoted) {
+                $buf .= $char;
+            } else {
+                if (defined $buf) {
+                    #say "D:pushing word <$buf>";
+                    push @words, $buf;
+                    undef $buf;
+                } elsif (!$inserted_empty_word &&
+                             $pos==$point && $chars[$pos-1] =~ /\s/ &&
+                                 $pos+1 < $len && $chars[$pos+1] =~ /\s/) {
+                    #say "D:insert empty word";
+                    push @words, '' unless $words[-1] eq '';
+                    $inserted_empty_word++;
+                }
+            }
+            next;
+        } else {
+            $inserted_empty_word = 0;
+        }
+
+        if ($char eq '"') {
+            if ($single_quoted) {
+                $buf .= $char;
+                next;
+            }
+            $double_quoted = !$double_quoted;
+            if (!$double_quoted) {
+                $buf .= '"' if $preserve_quotes;
+            }
+            next;
+        }
+
+        if ($char eq "'") {
+            if ($double_quoted) {
+                $buf .= $char;
+                next;
+            }
+            $single_quoted = !$single_quoted;
+            if (!$single_quoted) {
+                $buf .= "'" if $preserve_quotes;
+            }
+            next;
+        }
+
+        if (index($word_breaks, $char) >= 0) {
+            if ($escaped || $single_quoted || $double_quoted) {
+                $buf .= $single_quoted ? "'":'"' if !defined($buf) && $preserve_quotes;
+                $buf .= $char;
+                next;
+            }
+            push @words, $buf if defined $buf;
+            push @words, $char;
+            undef $buf;
+            next;
+        }
+
+        $buf .= $single_quoted ? "'" : $double_quoted ? '"' : '' if !defined($buf) && $preserve_quotes;
+        $buf .= $char;
     }
 
-    my @right;
-    if (length($right)) {
-        # shave off the rest of the word at "cursor"
-        $right =~ s/^\S+//;
-        @right = @{ break_cmdline_into_words($right, $word_breaks) }
-            if length($right);
+    if (defined $buf) {
+        #say "D:pushing last word <$buf>";
+        push @words, $buf;
+        $cword //= @words-1;
+    } else {
+        if (!@words || $words[-1] ne '') {
+            $cword //= @words;
+            $words[$cword] //= '';
+        } else {
+            $cword //= @words-1;
+        }
     }
-    #$log->tracef("\@left=%s, \@right=%s", \@left, \@right);
 
-    my $words = [@left, @right],
-    my $cword = @left ? scalar(@left)-1 : 0;
-
-    # is there a space after the final word (e.g. "foo bar ^" instead of "foo
-    # bar^" or "foo bar\ ^")? if yes then cword is on the next word.
-    my $tmp = $left;
-    my $nspc_left = 0; $nspc_left++ while $tmp =~ s/\s$//;
-    $tmp = $left[-1];
-    my $nspc_lastw = 0;
-    if (defined($tmp)) { $nspc_lastw++ while $tmp =~ s/\s$// }
-    $cword++ if $nspc_lastw < $nspc_left;
-
-    return [$words, $cword];
+    return [\@words, $cword];
 }
 
 $SPEC{format_completion} = {
@@ -414,7 +326,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.08 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-23.
+This document describes version 0.09 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-25.
 
 =head1 DESCRIPTION
 
@@ -467,42 +379,6 @@ Tab, you can also use Perl to I<generate> bash C<complete> scripts for you. See
 L<Complete::BashGen>.
 
 =head1 FUNCTIONS
-
-
-=head2 break_cmdline_into_words($cmdline, $word_breaks) -> array
-
-Break command-line string into words.
-
-Note to users: this is an internal function. Normally you only need to use
-C<parse_cmdline>.
-
-The first step of shell completion is to break the command-line string
-(e.g. from COMP_LINE in bash) into words.
-
-Bash by default split using these characters (from COMP_WORDBREAKS):
-
- COMP_WORDBREAKS=$' \t\n"\'@><=;|&(:'
-
-We don't necessarily want to split using default bash's rule, for example in
-Perl we might want to complete module names which contain colons (e.g.
-C<Module::Path>).
-
-By default, this routine splits by spaces and tabs and takes into account
-backslash and quoting. Unclosed quotes won't generate error.
-
-Arguments ('*' denotes required arguments):
-
-=over 4
-
-=item * B<cmdline>* => I<str>
-
-=item * B<word_breaks> => I<str>
-
-=back
-
-Return value:
-
- (array)
 
 
 =head2 format_completion($shell_completion) -> array|str
@@ -581,50 +457,16 @@ Return value:
 Formatted string (or array, if `as` is set to `array`) (any)
 
 
-=head2 parse_cmdline($cmdline, $point, $word_breaks) -> array
+=head2 parse_cmdline($cmdline, $point, $word_breaks, $preserve_quotes) -> array
 
 Parse shell command-line for processing by completion routines.
 
-Examples:
-
- parse_cmdline("cmd ", 4); # -> [[], 0]
-
-
-The command (first word) is never included.
-
-
- parse_cmdline("cmd -", 5); # -> [["-"], 0]
- parse_cmdline("cmd - ", 6); # -> [["-"], 1]
- parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
- parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
- parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
- parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
- parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
- parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
-
-
-Other word-breaking characters (other than whitespace) is not used by default.
-
-
- parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "=", "val"], 2]
-
-
-Breaking at '=' too.
-
-
- parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "=", "val"], 3]
-
-
-Breaking at '=' too (2).
-
-
- parse_cmdline("cmd \"--opt=val", 13, "="); # -> [["--opt=va"], 0]
-
-
-Double quote protects word-breaking characters.
-
-
-Currently only supports bash.
+Currently only supports bash. This function basically converts COMP_LINE (str)
+and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD (int), like
+what bash supplies to shell functions. The differences with bash are: 1) quotes
+and backslashes are by default stripped, unless you specify C<preserve_quotes>;
+2) no word-breaking characters aside from whitespaces are used, unless you
+specify more word-breaking characters by setting C<word_breaks>.
 
 Arguments ('*' denotes required arguments):
 
@@ -637,6 +479,10 @@ Command-line, defaults to COMP_LINE environment.
 =item * B<point> => I<int>
 
 Point/position to complete in command-line, defaults to COMP_POINT.
+
+=item * B<preserve_quotes> => I<bool> (default: 0)
+
+Whether to preserve quotes, like bash does.
 
 =item * B<word_breaks> => I<str>
 
@@ -655,13 +501,13 @@ Return value:
  (array)
 
 Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
-equivalent to `COMP_WORDS` provided by shell to bash function. `$cword` is an
-integer, equivalent to shell-provided `COMP_CWORD` variable to bash function.
-The word to be completed is at `$words->[$cword]`.
+equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword` is an
+integer, equivalent to `COMP_CWORD` provided by bash to shell functions. The
+word to be completed is at `$words->[$cword]`.
 
 =head1 TODOS
 
-Accept regex for path_sep.
+format_completion(): Accept regex for path_sep.
 
 =head1 SEE ALSO
 

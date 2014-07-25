@@ -1,5 +1,21 @@
 Revision history for Complete-Bash
 
+0.09    2014-07-25 (SHARYANTO)
+
+        [INCOMPATIBLE CHANGES]
+
+        - Change algorithm to mimic bash more closely. Remove
+          break_cmdline_into_words() and merge the code into parse_cmdline().
+          Now does not strip first word, because bash also does not in
+          COMP_WORDS. Now 'cmd foo ^ bar' works (becomes ['cmd', 'foo', '',
+          'bar']. In short, parse_cmdline() should [be able to] produce the
+          equivalent of bash's COMP_WORDS and COMP_CWORD.
+
+        - parse_cmdline(): Add option to preserve quotes, like bash. For
+          example, 'cmd "foo bar"' becomes ['cmd', '"foo bar"']. Although this
+          is not enabled by default.
+
+
 0.08    2014-07-23 (SHARYANTO)
 
         [INCOMPATIBLE CHANGES]

@@ -2,8 +2,8 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.08 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-07-23.
+    This document describes version 0.09 of Complete::Bash (from Perl
+    distribution Complete-Bash), released on 2014-07-25.
 
 DESCRIPTION
     Bash allows completion to come from various sources. The simplest is
@@ -56,36 +56,6 @@ DESCRIPTION
     for you. See Complete::BashGen.
 
 FUNCTIONS
-  break_cmdline_into_words($cmdline, $word_breaks) -> array
-    Break command-line string into words.
-
-    Note to users: this is an internal function. Normally you only need to
-    use "parse_cmdline".
-
-    The first step of shell completion is to break the command-line string
-    (e.g. from COMP_LINE in bash) into words.
-
-    Bash by default split using these characters (from COMP_WORDBREAKS):
-
-     COMP_WORDBREAKS=$' \t\n"\'@><=;|&(:'
-
-    We don't necessarily want to split using default bash's rule, for
-    example in Perl we might want to complete module names which contain
-    colons (e.g. "Module::Path").
-
-    By default, this routine splits by spaces and tabs and takes into
-    account backslash and quoting. Unclosed quotes won't generate error.
-
-    Arguments ('*' denotes required arguments):
-
-    *   cmdline* => *str*
-
-    *   word_breaks => *str*
-
-    Return value:
-
-     (array)
-
   format_completion($shell_completion) -> array|str
     Format completion for output (for shell).
 
@@ -157,40 +127,16 @@ FUNCTIONS
 
     Formatted string (or array, if `as` is set to `array`) (any)
 
-  parse_cmdline($cmdline, $point, $word_breaks) -> array
+  parse_cmdline($cmdline, $point, $word_breaks, $preserve_quotes) -> array
     Parse shell command-line for processing by completion routines.
 
-    Examples:
-
-     parse_cmdline("cmd ", 4); # -> [[], 0]
-
-    The command (first word) is never included.
-
-     parse_cmdline("cmd -", 5); # -> [["-"], 0]
-     parse_cmdline("cmd - ", 6); # -> [["-"], 1]
-     parse_cmdline("cmd --opt val", 6); # -> [["--", "val"], 0]
-     parse_cmdline("cmd --opt val", 9); # -> [["--opt", "val"], 0]
-     parse_cmdline("cmd --opt val", 10); # -> [["--opt"], 1]
-     parse_cmdline("cmd --opt val", 13); # -> [["--opt", "val"], 1]
-     parse_cmdline("cmd --opt val ", 14); # -> [["--opt", "val"], 2]
-     parse_cmdline("cmd --opt=val", 13); # -> [["--opt=val"], 0]
-
-    Other word-breaking characters (other than whitespace) is not used by
-    default.
-
-     parse_cmdline("cmd --opt=val", 13, "="); # -> [["--opt", "=", "val"], 2]
-
-    Breaking at '=' too.
-
-     parse_cmdline("cmd --opt=val ", 14, "="); # -> [["--opt", "=", "val"], 3]
-
-    Breaking at '=' too (2).
-
-     parse_cmdline("cmd \"--opt=val", 13, "="); # -> [["--opt=va"], 0]
-
-    Double quote protects word-breaking characters.
-
-    Currently only supports bash.
+    Currently only supports bash. This function basically converts COMP_LINE
+    (str) and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD
+    (int), like what bash supplies to shell functions. The differences with
+    bash are: 1) quotes and backslashes are by default stripped, unless you
+    specify "preserve_quotes"; 2) no word-breaking characters aside from
+    whitespaces are used, unless you specify more word-breaking characters
+    by setting "word_breaks".
 
     Arguments ('*' denotes required arguments):
 
@@ -201,6 +147,10 @@ FUNCTIONS
     *   point => *int*
 
         Point/position to complete in command-line, defaults to COMP_POINT.
+
+    *   preserve_quotes => *bool* (default: 0)
+
+        Whether to preserve quotes, like bash does.
 
     *   word_breaks => *str*
 
@@ -218,12 +168,12 @@ FUNCTIONS
      (array)
 
     Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
-    equivalent to `COMP_WORDS` provided by shell to bash function. `$cword`
-    is an integer, equivalent to shell-provided `COMP_CWORD` variable to
-    bash function. The word to be completed is at `$words->[$cword]`.
+    equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword`
+    is an integer, equivalent to `COMP_CWORD` provided by bash to shell
+    functions. The word to be completed is at `$words->[$cword]`.
 
 TODOS
-    Accept regex for path_sep.
+    format_completion(): Accept regex for path_sep.
 
 SEE ALSO
     Complete
