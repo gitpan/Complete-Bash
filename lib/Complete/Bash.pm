@@ -11,8 +11,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-25'; # DATE
-our $VERSION = '0.10'; # VERSION
+our $DATE = '2014-07-26'; # DATE
+our $VERSION = '0.11'; # VERSION
 
 our %SPEC;
 
@@ -27,6 +27,17 @@ what bash supplies to shell functions. The differences with bash are: 1) quotes
 and backslashes are by default stripped, unless you specify `preserve_quotes`;
 2) no word-breaking characters aside from whitespaces are used, unless you
 specify more word-breaking characters by setting `word_breaks`.
+
+Caveats:
+
+* Due to the way bash parses the command line, the two below are equivalent:
+
+    % cmd --foo=bar
+    % cmd --foo = bar
+
+  Because they both expand to `['--foo', '=', 'bar']`, when `=` is used as a
+  word-breaking character. But obviously `Getopt::Long` does not regard the two
+  as equivalent.
 
 _
     args_as => 'array',
@@ -300,12 +311,12 @@ sub format_completion {
     for (@lines) {
         if ($escmode eq 'shellvar') {
             # don't escape $
-            s!([^A-Za-z0-9,+._/\$-])!\\$1!g;
+            s!([^A-Za-z0-9,+._/\$~-])!\\$1!g;
         } elsif ($escmode eq 'none') {
             # no escaping
         } else {
             # default
-            s!([^A-Za-z0-9,+._/:-])!\\$1!g;
+            s!([^A-Za-z0-9,+._/:~-])!\\$1!g;
         }
     }
 
@@ -331,7 +342,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.10 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-25.
+This document describes version 0.11 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-26.
 
 =head1 DESCRIPTION
 
@@ -472,6 +483,21 @@ what bash supplies to shell functions. The differences with bash are: 1) quotes
 and backslashes are by default stripped, unless you specify C<preserve_quotes>;
 2) no word-breaking characters aside from whitespaces are used, unless you
 specify more word-breaking characters by setting C<word_breaks>.
+
+Caveats:
+
+=over
+
+=item * Due to the way bash parses the command line, the two below are equivalent:
+
+% cmd --foo=bar
+% cmd --foo = bar
+
+Because they both expand to C<['--foo', '=', 'bar']>, when C<=> is used as a
+word-breaking character. But obviously C<Getopt::Long> does not regard the two
+as equivalent.
+
+=back
 
 Arguments ('*' denotes required arguments):
 

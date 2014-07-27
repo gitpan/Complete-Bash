@@ -1,5 +1,10 @@
 Revision history for Complete-Bash
 
+0.11    2014-07-26 (SHARYANTO)
+
+        - [tweak] format_completion(): Don't escape '~'.
+
+
 0.10    2014-07-25 (SHARYANTO)
 
         - No functional changes.
