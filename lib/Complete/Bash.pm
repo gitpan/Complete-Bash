@@ -11,8 +11,8 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-07-26'; # DATE
-our $VERSION = '0.11'; # VERSION
+our $DATE = '2014-11-28'; # DATE
+our $VERSION = '0.12'; # VERSION
 
 our %SPEC;
 
@@ -21,12 +21,12 @@ $SPEC{parse_cmdline} = {
     summary => 'Parse shell command-line for processing by completion routines',
     description => <<'_',
 
-Currently only supports bash. This function basically converts COMP_LINE (str)
-and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD (int), like
-what bash supplies to shell functions. The differences with bash are: 1) quotes
-and backslashes are by default stripped, unless you specify `preserve_quotes`;
-2) no word-breaking characters aside from whitespaces are used, unless you
-specify more word-breaking characters by setting `word_breaks`.
+This function basically converts COMP_LINE (str) and COMP_POINT (int) to become
+COMP_WORDS (array) and COMP_CWORD (int), like what bash supplies to shell
+functions. The differences with bash are: 1) quotes and backslashes are by
+default stripped, unless you specify `preserve_quotes`; 2) no word-breaking
+characters aside from whitespaces are used, unless you specify more
+word-breaking characters by setting `word_breaks`.
 
 Caveats:
 
@@ -35,9 +35,9 @@ Caveats:
     % cmd --foo=bar
     % cmd --foo = bar
 
-  Because they both expand to `['--foo', '=', 'bar']`, when `=` is used as a
-  word-breaking character. But obviously `Getopt::Long` does not regard the two
-  as equivalent.
+Because they both expand to `['--foo', '=', 'bar']`, when `=` is used as a
+word-breaking character. But obviously `Getopt::Long` does not regard the two as
+equivalent.
 
 _
     args_as => 'array',
@@ -226,12 +226,8 @@ Bash accepts completion reply in the form of one entry per line to STDOUT. Some
 characters will need to be escaped. This function helps you do the formatting,
 with some options.
 
-This function accepts an array (the result of a `complete_*` function), _or_ a
-hash (which contains the completion array from a `complete_*` function as well
-as other metadata for formatting hints). Known keys:
-
-* `completion` (array): The completion array. You can put the result of
-  `complete_*` function here.
+This function accepts completion answer structure as described in the `Complete`
+POD. Aside from `words`, this function also recognizes these keys:
 
 * `as` (str): Either `string` (the default) or `array` (to return array of lines
   instead of the lines joined together). Returning array is useful if you are
@@ -276,8 +272,8 @@ as other metadata for formatting hints). Known keys:
 _
     args_as => 'array',
     args => {
-        shell_completion => {
-            summary => 'Result of shell completion',
+        completion => {
+            summary => 'Completion answer structure',
             description => <<'_',
 
 Either an array or hash. See function description for more details.
@@ -297,33 +293,43 @@ _
 sub format_completion {
     my ($hcomp) = @_;
 
-    $hcomp = {completion=>$hcomp} unless ref($hcomp) eq 'HASH';
-    my $comp     = $hcomp->{completion};
+    $hcomp = {words=>$hcomp} unless ref($hcomp) eq 'HASH';
+    my $comp     = $hcomp->{words};
     my $as       = $hcomp->{as} // 'string';
     my $escmode  = $hcomp->{escmode} // 'default';
     my $path_sep = $hcomp->{path_sep};
 
-    if (defined($path_sep) && @$comp == 1 && $comp->[0] =~ /\Q$path_sep\E\z/) {
-        $comp = [$comp->[0], "$comp->[0] "];
+    if (defined($path_sep) && @$comp == 1) {
+        my $re = qr/\Q$path_sep\E\z/;
+        my $word;
+        if (ref($comp->[0]) eq 'HASH') {
+            $comp = [$comp->[0], {word=>"$comp->[0] "}] if
+                $comp->[0]{word} =~ $re;
+        } else {
+            $comp = [$comp->[0], "$comp->[0] "]
+                if $comp->[0] =~ $re;
+        }
     }
 
-    my @lines = @$comp;
-    for (@lines) {
+    my @res;
+    for my $entry (@$comp) {
+        my $word = ref($entry) eq 'HASH' ? $entry->{word} : $entry;
         if ($escmode eq 'shellvar') {
             # don't escape $
-            s!([^A-Za-z0-9,+._/\$~-])!\\$1!g;
+            $word =~ s!([^A-Za-z0-9,+._/\$~-])!\\$1!g;
         } elsif ($escmode eq 'none') {
             # no escaping
         } else {
             # default
-            s!([^A-Za-z0-9,+._/:~-])!\\$1!g;
+            $word =~ s!([^A-Za-z0-9,+._/:~-])!\\$1!g;
         }
+        push @res, $word;
     }
 
     if ($as eq 'array') {
-        return \@lines;
+        return \@res;
     } else {
-        return join("", map {($_, "\n")} @lines);
+        return join("", map {($_, "\n")} @res);
     }
 }
 
@@ -342,7 +348,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.11 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-07-26.
+This document describes version 0.12 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-11-28.
 
 =head1 DESCRIPTION
 
@@ -380,7 +386,7 @@ return the list of words one per-line to STDOUT. An example:
  #!/usr/bin/perl
  use Complete::Bash qw(parse_cmdline format_completion);
  use Complete::Util qw(complete_array_elem);
- my ($words, $cword) = parse_cmdline();
+ my ($words, $cword) = @{ parse_cmdline() };
  my $res = complete_array_elem(array=>[qw/--help --verbose --version/], word=>$words->[$cword]);
  print format_completion($res);
 
@@ -390,14 +396,10 @@ return the list of words one per-line to STDOUT. An example:
 
 This module provides routines for you to be doing the above.
 
-Instead of being called by bash as an external command every time user presses
-Tab, you can also use Perl to I<generate> bash C<complete> scripts for you. See
-L<Complete::BashGen>.
-
 =head1 FUNCTIONS
 
 
-=head2 format_completion($shell_completion) -> array|str
+=head2 format_completion($completion) -> array|str
 
 Format completion for output (for shell).
 
@@ -405,14 +407,10 @@ Bash accepts completion reply in the form of one entry per line to STDOUT. Some
 characters will need to be escaped. This function helps you do the formatting,
 with some options.
 
-This function accepts an array (the result of a C<complete_*> function), I<or> a
-hash (which contains the completion array from a C<complete_*> function as well
-as other metadata for formatting hints). Known keys:
+This function accepts completion answer structure as described in the C<Complete>
+POD. Aside from C<words>, this function also recognizes these keys:
 
 =over
-
-=item * C<completion> (array): The completion array. You can put the result of
-C<complete_*> function here.
 
 =item * C<as> (str): Either C<string> (the default) or C<array> (to return array of lines
 instead of the lines joined together). Returning array is useful if you are
@@ -460,9 +458,9 @@ Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<shell_completion>* => I<array|hash>
+=item * B<completion>* => I<array|hash>
 
-Result of shell completion.
+Completion answer structure.
 
 Either an array or hash. See function description for more details.
 
@@ -477,12 +475,12 @@ Formatted string (or array, if `as` is set to `array`) (any)
 
 Parse shell command-line for processing by completion routines.
 
-Currently only supports bash. This function basically converts COMP_LINE (str)
-and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD (int), like
-what bash supplies to shell functions. The differences with bash are: 1) quotes
-and backslashes are by default stripped, unless you specify C<preserve_quotes>;
-2) no word-breaking characters aside from whitespaces are used, unless you
-specify more word-breaking characters by setting C<word_breaks>.
+This function basically converts COMP_LINE (str) and COMP_POINT (int) to become
+COMP_WORDS (array) and COMP_CWORD (int), like what bash supplies to shell
+functions. The differences with bash are: 1) quotes and backslashes are by
+default stripped, unless you specify C<preserve_quotes>; 2) no word-breaking
+characters aside from whitespaces are used, unless you specify more
+word-breaking characters by setting C<word_breaks>.
 
 Caveats:
 
@@ -493,11 +491,11 @@ Caveats:
 % cmd --foo=bar
 % cmd --foo = bar
 
-Because they both expand to C<['--foo', '=', 'bar']>, when C<=> is used as a
-word-breaking character. But obviously C<Getopt::Long> does not regard the two
-as equivalent.
-
 =back
+
+Because they both expand to C<['--foo', '=', 'bar']>, when C<=> is used as a
+word-breaking character. But obviously C<Getopt::Long> does not regard the two as
+equivalent.
 
 Arguments ('*' denotes required arguments):
 
@@ -548,8 +546,6 @@ format_completion(): Accept regex for path_sep.
 
 L<Complete>
 
-L<Complete::BashGen>
-
 Other modules related to bash shell tab completion: L<Bash::Completion>,
 L<Getopt::Complete>. L<Term::Bash::Completion::Generator>
 
@@ -574,11 +570,11 @@ feature.
 
 =head1 AUTHOR
 
-Steven Haryanto <stevenharyanto@gmail.com>
+perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by Steven Haryanto.
+This software is copyright (c) 2014 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

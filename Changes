@@ -1,5 +1,15 @@
 Revision history for Complete-Bash
 
+0.12    2014-11-28 (SHARYANTO)
+
+        [INCOMPATIBLE CHANGES]
+
+        - Comply to Complete 0.04, change 'completion' key in hash-form
+          completion answer structure to 'words', and accept each word as
+          hashref (to allow for things like fish shell which can have a
+          'description' instead of just 'word' for each entry).
+
+
 0.11    2014-07-26 (SHARYANTO)
 
         - [tweak] format_completion(): Don't escape '~'.

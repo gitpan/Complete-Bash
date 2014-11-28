@@ -2,8 +2,8 @@ NAME
     Complete::Bash - Completion module for bash shell
 
 VERSION
-    This document describes version 0.11 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-07-26.
+    This document describes version 0.12 of Complete::Bash (from Perl
+    distribution Complete-Bash), released on 2014-11-28.
 
 DESCRIPTION
     Bash allows completion to come from various sources. The simplest is
@@ -41,7 +41,7 @@ DESCRIPTION
      #!/usr/bin/perl
      use Complete::Bash qw(parse_cmdline format_completion);
      use Complete::Util qw(complete_array_elem);
-     my ($words, $cword) = parse_cmdline();
+     my ($words, $cword) = @{ parse_cmdline() };
      my $res = complete_array_elem(array=>[qw/--help --verbose --version/], word=>$words->[$cword]);
      print format_completion($res);
 
@@ -51,24 +51,17 @@ DESCRIPTION
 
     This module provides routines for you to be doing the above.
 
-    Instead of being called by bash as an external command every time user
-    presses Tab, you can also use Perl to *generate* bash "complete" scripts
-    for you. See Complete::BashGen.
-
 FUNCTIONS
-  format_completion($shell_completion) -> array|str
+  format_completion($completion) -> array|str
     Format completion for output (for shell).
 
     Bash accepts completion reply in the form of one entry per line to
     STDOUT. Some characters will need to be escaped. This function helps you
     do the formatting, with some options.
 
-    This function accepts an array (the result of a "complete_*" function),
-    *or* a hash (which contains the completion array from a "complete_*"
-    function as well as other metadata for formatting hints). Known keys:
-
-    *   "completion" (array): The completion array. You can put the result
-        of "complete_*" function here.
+    This function accepts completion answer structure as described in the
+    "Complete" POD. Aside from "words", this function also recognizes these
+    keys:
 
     *   "as" (str): Either "string" (the default) or "array" (to return
         array of lines instead of the lines joined together). Returning
@@ -117,9 +110,9 @@ FUNCTIONS
 
     Arguments ('*' denotes required arguments):
 
-    *   shell_completion* => *array|hash*
+    *   completion* => *array|hash*
 
-        Result of shell completion.
+        Completion answer structure.
 
         Either an array or hash. See function description for more details.
 
@@ -130,13 +123,13 @@ FUNCTIONS
   parse_cmdline($cmdline, $point, $word_breaks, $preserve_quotes) -> array
     Parse shell command-line for processing by completion routines.
 
-    Currently only supports bash. This function basically converts COMP_LINE
-    (str) and COMP_POINT (int) to become COMP_WORDS (array) and COMP_CWORD
-    (int), like what bash supplies to shell functions. The differences with
-    bash are: 1) quotes and backslashes are by default stripped, unless you
-    specify "preserve_quotes"; 2) no word-breaking characters aside from
-    whitespaces are used, unless you specify more word-breaking characters
-    by setting "word_breaks".
+    This function basically converts COMP_LINE (str) and COMP_POINT (int) to
+    become COMP_WORDS (array) and COMP_CWORD (int), like what bash supplies
+    to shell functions. The differences with bash are: 1) quotes and
+    backslashes are by default stripped, unless you specify
+    "preserve_quotes"; 2) no word-breaking characters aside from whitespaces
+    are used, unless you specify more word-breaking characters by setting
+    "word_breaks".
 
     Caveats:
 
@@ -145,9 +138,9 @@ FUNCTIONS
 
         % cmd --foo=bar % cmd --foo = bar
 
-        Because they both expand to "['--foo', '=', 'bar']", when "=" is
-        used as a word-breaking character. But obviously "Getopt::Long" does
-        not regard the two as equivalent.
+    Because they both expand to "['--foo', '=', 'bar']", when "=" is used as
+    a word-breaking character. But obviously "Getopt::Long" does not regard
+    the two as equivalent.
 
     Arguments ('*' denotes required arguments):
 
@@ -193,8 +186,6 @@ TODOS
 SEE ALSO
     Complete
 
-    Complete::BashGen
-
     Other modules related to bash shell tab completion: Bash::Completion,
     Getopt::Complete. Term::Bash::Completion::Generator
 
@@ -218,10 +209,10 @@ BUGS
     to an existing test-file that illustrates the bug or desired feature.
 
 AUTHOR
-    Steven Haryanto <stevenharyanto@gmail.com>
+    perlancar <perlancar@cpan.org>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2014 by Steven Haryanto.
+    This software is copyright (c) 2014 by perlancar@cpan.org.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
