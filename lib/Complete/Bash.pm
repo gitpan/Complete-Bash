@@ -8,13 +8,21 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
                        parse_cmdline
+                       parse_options
                        format_completion
                );
 
-our $DATE = '2014-11-28'; # DATE
-our $VERSION = '0.12'; # VERSION
+our $DATE = '2014-11-30'; # DATE
+our $VERSION = '0.13'; # VERSION
 
 our %SPEC;
+
+$SPEC{':package'} = {
+    v => 1.1,
+    links => [
+        {url => 'pm:Complete'},
+    ],
+};
 
 $SPEC{parse_cmdline} = {
     v => 1.1,
@@ -91,6 +99,20 @@ arguments only (like in `@ARGV`), you need to strip the first element from
 _
     },
     result_naked => 1,
+    links => [
+        {
+            url => 'pm:Parse::CommandLine',
+            description => <<'_',
+
+The module `Parse::CommandLine` has a function called `parse_command_line()`
+which is similar, breaking a command-line string into words (in fact, currently
+`parse_cmdline()`'s implementation is stolen from this module). However,
+`parse_cmdline()` does not die on unclosed quotes and allows custom
+word-breaking characters.
+
+_
+        },
+    ],
 };
 sub parse_cmdline {
     my ($line, $point, $word_breaks, $preserve_quotes) = @_;
@@ -215,6 +237,143 @@ sub parse_cmdline {
     }
 
     return [\@words, $cword];
+}
+
+$SPEC{parse_options} = {
+    v => 1.1,
+    summary => 'Parse command-line for options and arguments, '.
+        'more or less like Getopt::Long',
+    description => <<'_',
+
+Parse command-line into words using `parse_cmdline()` then separate options and
+arguments. Since this routine does not accept `Getopt::Long` (this routine is
+meant to be a generic option parsing of command-lines), it uses a few simple
+rules to server the common cases:
+
+* After `--`, the rest of the words are arguments (just like Getopt::Long).
+
+* If we get something like `-abc` (a single dash followed by several letters) it
+  is assumed to be a bundle of short options.
+
+* If we get something like `-MData::Dump` (a single dash, followed by a letter,
+  followed by some letters *and* non-letters/numbers) it is assumed to be an
+  option (`-M`) followed by a value.
+
+* If we get something like `--foo` it is a long option. If the next word is an
+  option (starts with a `-`) then it is assumed that this option does not have
+  argument. Otherwise, the next word is assumed to be this option's value.
+
+* Otherwise, it is an argument (that is, permute is assumed).
+
+_
+
+    args => {
+        cmdline => {
+            summary => 'Command-line, defaults to COMP_LINE environment',
+            schema => 'str*',
+        },
+        point => {
+            summary => 'Point/position to complete in command-line, '.
+                'defaults to COMP_POINT',
+            schema => 'int*',
+        },
+        words => {
+            summary => 'Alternative to passing `cmdline` and `point`',
+            schema => ['array*', of=>'str*'],
+            description => <<'_',
+
+If you already did a `parse_cmdline()`, you can pass the words result (the first
+element) here to avoid calling `parse_cmdline()` twice.
+
+_
+        },
+        cword => {
+            summary => 'Alternative to passing `cmdline` and `point`',
+            schema => ['array*', of=>'str*'],
+            description => <<'_',
+
+If you already did a `parse_cmdline()`, you can pass the cword result (the
+second element) here to avoid calling `parse_cmdline()` twice.
+
+_
+        },
+    },
+    result => {
+        schema => 'hash*',
+    },
+};
+sub parse_options {
+    my %args = @_;
+
+    my ($words, $cword) = @_;
+    if ($args{words}) {
+        ($words, $cword) = ($args{words}, $args{cword});
+    } else {
+        ($words, $cword) = @{parse_cmdline($args{cmdline}, $args{point}, '=')};
+    }
+
+    my @types;
+    my %opts;
+    my @argv;
+    my $type;
+    $types[0] = 'command';
+    my $i = 1;
+    while ($i < @$words) {
+        my $word = $words->[$i];
+        if ($word eq '--') {
+            if ($i == $cword) {
+                $types[$i] = 'opt_name';
+                $i++; next;
+            }
+            $types[$i] = 'separator';
+            for ($i+1 .. @$words-1) {
+                $types[$_] = 'arg,' . @argv;
+                push @argv, $words->[$_];
+            }
+            last;
+        } elsif ($word =~ /\A-(\w*)\z/) {
+            $types[$i] = 'opt_name';
+            for (split '', $1) {
+                push @{ $opts{$_} }, undef;
+            }
+            $i++; next;
+        } elsif ($word =~ /\A-([\w?])(.*)/) {
+            $types[$i] = 'opt_name';
+            # XXX currently not completing option value
+            push @{ $opts{$1} }, $2;
+            $i++; next;
+        } elsif ($word =~ /\A--(\w[\w-]*)\z/) {
+            $types[$i] = 'opt_name';
+            my $opt = $1;
+            $i++;
+            if ($i < @$words) {
+                if ($words->[$i] eq '=') {
+                    $types[$i] = 'separator';
+                    $i++;
+                }
+                if ($words->[$i] =~ /\A-/) {
+                    push @{ $opts{$opt} }, undef;
+                    next;
+                }
+                $types[$i] = 'opt_val';
+                push @{ $opts{$opt} }, $words->[$i];
+                $i++; next;
+            }
+        } else {
+            $types[$i] = 'arg,' . @argv;
+            push @argv, $word;
+            $i++; next;
+        }
+    }
+
+    return {
+        opts      => \%opts,
+        argv      => \@argv,
+        cword     => $cword,
+        words     => $words,
+        word_type => $types[$cword],
+        #_types    => \@types,
+    };
 }
 
 $SPEC{format_completion} = {
@@ -348,7 +507,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.12 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-11-28.
+This document describes version 0.13 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-11-30.
 
 =head1 DESCRIPTION
 
@@ -529,14 +688,98 @@ Return value:
 
  (array)
 
-Return a 2-element array: `[$words, $cword]`. `$words` is array of str,
-equivalent to `COMP_WORDS` provided by bash to shell functions. `$cword` is an
-integer, equivalent to `COMP_CWORD` provided by bash to shell functions. The
-word to be completed is at `$words->[$cword]`.
+Return a 2-element array: C<[$words, $cword]>. C<$words> is array of str,
+equivalent to C<COMP_WORDS> provided by bash to shell functions. C<$cword> is an
+integer, equivalent to C<COMP_CWORD> provided by bash to shell functions. The
+word to be completed is at C<< $words-E<gt>[$cword] >>.
 
 Note that COMP_LINE includes the command name. If you want the command-line
-arguments only (like in `@ARGV`), you need to strip the first element from
-`$words` and reduce `$cword` by 1.
+arguments only (like in C<@ARGV>), you need to strip the first element from
+C<$words> and reduce C<$cword> by 1.
+
+See also:
+
+=over
+
+* L<Parse::CommandLine>
+
+The module C<Parse::CommandLine> has a function called C<parse_command_line()>
+which is similar, breaking a command-line string into words (in fact, currently
+C<parse_cmdline()>'s implementation is stolen from this module). However,
+C<parse_cmdline()> does not die on unclosed quotes and allows custom
+word-breaking characters.
+
+=back
+
+
+=head2 parse_options(%args) -> [status, msg, result, meta]
+
+Parse command-line for options and arguments, more or less like Getopt::Long.
+
+Parse command-line into words using C<parse_cmdline()> then separate options and
+arguments. Since this routine does not accept C<Getopt::Long> (this routine is
+meant to be a generic option parsing of command-lines), it uses a few simple
+rules to server the common cases:
+
+=over
+
+=item * After C<-->, the rest of the words are arguments (just like Getopt::Long).
+
+=item * If we get something like C<-abc> (a single dash followed by several letters) it
+is assumed to be a bundle of short options.
+
+=item * If we get something like C<-MData::Dump> (a single dash, followed by a letter,
+followed by some letters I<and> non-letters/numbers) it is assumed to be an
+option (C<-M>) followed by a value.
+
+=item * If we get something like C<--foo> it is a long option. If the next word is an
+option (starts with a C<->) then it is assumed that this option does not have
+argument. Otherwise, the next word is assumed to be this option's value.
+
+=item * Otherwise, it is an argument (that is, permute is assumed).
+
+=back
+
+Arguments ('*' denotes required arguments):
+
+=over 4
+
+=item * B<cmdline> => I<str>
+
+Command-line, defaults to COMP_LINE environment.
+
+=item * B<cword> => I<array>
+
+Alternative to passing `cmdline` and `point`.
+
+If you already did a C<parse_cmdline()>, you can pass the cword result (the
+second element) here to avoid calling C<parse_cmdline()> twice.
+
+=item * B<point> => I<int>
+
+Point/position to complete in command-line, defaults to COMP_POINT.
+
+=item * B<words> => I<array>
+
+Alternative to passing `cmdline` and `point`.
+
+If you already did a C<parse_cmdline()>, you can pass the words result (the first
+element) here to avoid calling C<parse_cmdline()> twice.
+
+=back
+
+Return value:
+
+Returns an enveloped result (an array).
+
+First element (status) is an integer containing HTTP status code
+(200 means OK, 4xx caller error, 5xx function error). Second element
+(msg) is a string containing error message, or 'OK' if status is
+200. Third element (result) is optional, the actual result. Fourth
+element (meta) is called result metadata and is optional, a hash
+that contains extra information.
+
+ (hash)
 
 =head1 TODOS
 
@@ -544,13 +787,14 @@ format_completion(): Accept regex for path_sep.
 
 =head1 SEE ALSO
 
-L<Complete>
-
 Other modules related to bash shell tab completion: L<Bash::Completion>,
 L<Getopt::Complete>. L<Term::Bash::Completion::Generator>
 
 Programmable Completion section in Bash manual:
 L<https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion.html>
+
+
+L<Complete>
 
 =head1 HOMEPAGE
 

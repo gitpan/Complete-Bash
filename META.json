@@ -54,7 +54,7 @@
          "web" : "https://github.com/sharyanto/perl-Complete-Bash"
       }
    },
-   "version" : "0.12",
+   "version" : "0.13",
    "x_Dist_Zilla" : {
       "perl" : {
          "version" : "5.018002"
@@ -237,7 +237,7 @@
                      {
                         "class" : "Pod::Weaver::Plugin::Rinci",
                         "name" : "@Author::PERLANCAR/Rinci",
-                        "version" : "0.18"
+                        "version" : "0.19"
                      },
                      {
                         "class" : "Pod::Weaver::Section::Leftovers",
@@ -252,12 +252,12 @@
                      {
                         "class" : "Pod::Weaver::Section::Completion::GetoptLongComplete",
                         "name" : "@Author::PERLANCAR/Completion::GetoptLongComplete",
-                        "version" : "0.03"
+                        "version" : "0.04"
                      },
                      {
                         "class" : "Pod::Weaver::Section::Completion::PerinciCmdLine",
                         "name" : "@Author::PERLANCAR/Completion::PerinciCmdLine",
-                        "version" : "0.05"
+                        "version" : "0.07"
                      },
                      {
                         "class" : "Pod::Weaver::Section::Homepage::DefaultCPAN",
