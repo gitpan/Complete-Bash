@@ -25,10 +25,10 @@ resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Complete-Bash
   homepage: https://metacpan.org/release/Complete-Bash
   repository: git://github.com/sharyanto/perl-Complete-Bash.git
-version: '0.14'
+version: '0.15'
 x_Dist_Zilla:
   perl:
-    version: '5.018002'
+    version: '5.018001'
   plugins:
     -
       class: Dist::Zilla::Plugin::GatherDir

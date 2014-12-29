@@ -1,5 +1,14 @@
 Revision history for Complete-Bash
 
+0.15    2014-12-29 (PERLANCAR)
+
+	- No functional changes.
+
+	- Avoid PAUSE false positive misinterpreting 'package name' as
+	  statement (well, PAUSE is rather liberal with the regex, isn't
+	  it?).
+
+
 0.14    2014-12-29 (PERLANCAR)
 
         - Add workaround for annoyance when completing word that contains ':'

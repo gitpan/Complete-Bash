@@ -1,7 +1,7 @@
 package Complete::Bash;
 
 our $DATE = '2014-12-29'; # DATE
-our $VERSION = '0.14'; # VERSION
+our $VERSION = '0.15'; # VERSION
 
 use 5.010001;
 use strict;
@@ -424,12 +424,9 @@ POD. Aside from `words`, this function also recognizes these keys:
   space at the end) to prevent bash from adding a space automatically.
 
   Path mode is not restricted to completing filesystem paths. Anything path-like
-  can use it. For example when you are completing Java or Perl package name
-  (e.g. `com.company.product.whatever` or `File::Spec::Unix`) you can use this
-  mode (with `path_sep` appropriately set to, e.g. `.` or `::`). But note that
-  in the case of `::` since colon is a word-breaking character in Bash by
-  default, when typing you'll need to escape it (e.g. `mpath File\:\:Sp<tab>`)
-  or use it inside quotes (e.g. `mpath "File::Sp<tab>`).
+  can use it. For example when you are completing Java or Perl module name (e.g.
+  `com.company.product.whatever` or `File::Spec::Unix`) you can use this mode
+  (with `path_sep` appropriately set to, e.g. `.` or `::`).
 
 _
     args_as => 'array',
@@ -542,7 +539,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.14 of Complete::Bash (from Perl distribution Complete-Bash), released on 2015-12-29.
+This document describes version 0.15 of Complete::Bash (from Perl distribution Complete-Bash), released on 2015-12-29.
 
 =head1 DESCRIPTION
 
@@ -639,12 +636,9 @@ to C<['foo/', 'foo/ ']> (the second element is the first element with added
 space at the end) to prevent bash from adding a space automatically.
 
 Path mode is not restricted to completing filesystem paths. Anything path-like
-can use it. For example when you are completing Java or Perl package name
-(e.g. C<com.company.product.whatever> or C<File::Spec::Unix>) you can use this
-mode (with C<path_sep> appropriately set to, e.g. C<.> or C<::>). But note that
-in the case of C<::> since colon is a word-breaking character in Bash by
-default, when typing you'll need to escape it (e.g. C<< mpath File\:\:SpE<lt>tabE<gt> >>)
-or use it inside quotes (e.g. C<< mpath "File::SpE<lt>tabE<gt> >>).
+can use it. For example when you are completing Java or Perl module name (e.g.
+C<com.company.product.whatever> or C<File::Spec::Unix>) you can use this mode
+(with C<path_sep> appropriately set to, e.g. C<.> or C<::>).
 
 =back
 
