@@ -1,5 +1,12 @@
 Revision history for Complete-Bash
 
+0.14    2014-12-29 (PERLANCAR)
+
+        - Add workaround for annoyance when completing word that contains ':'
+          (like Perl package/module names) in bash, due ':' being a
+          word-breaking character in bash.
+
+
 0.13    2014-11-30 (PERLANCAR)
 
         - Add function: parse_options().

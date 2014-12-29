@@ -1,8 +1,13 @@
 package Complete::Bash;
 
+our $DATE = '2014-12-29'; # DATE
+our $VERSION = '0.14'; # VERSION
+
 use 5.010001;
 use strict;
 use warnings;
+
+#use Complete;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -12,13 +17,11 @@ our @EXPORT_OK = qw(
                        format_completion
                );
 
-our $DATE = '2014-11-30'; # DATE
-our $VERSION = '0.13'; # VERSION
-
 our %SPEC;
 
 $SPEC{':package'} = {
     v => 1.1,
+    summary => 'Completion module for bash shell',
     links => [
         {url => 'pm:Complete'},
     ],
@@ -442,6 +445,10 @@ _
             req=>1,
             pos=>0,
         },
+        opts => {
+            schema=>'hash*',
+            pos=>1,
+        },
     },
     result => {
         summary => 'Formatted string (or array, if `as` is set to `array`)',
@@ -450,7 +457,9 @@ _
     result_naked => 1,
 };
 sub format_completion {
-    my ($hcomp) = @_;
+    my ($hcomp, $opts) = @_;
+
+    $opts //= {};
 
     $hcomp = {words=>$hcomp} unless ref($hcomp) eq 'HASH';
     my $comp     = $hcomp->{words};
@@ -467,6 +476,32 @@ sub format_completion {
         } else {
             $comp = [$comp->[0], "$comp->[0] "]
                 if $comp->[0] =~ $re;
+        }
+    }
+
+    # XXX this is currently an ad-hoc solution, need to formulate a
+    # name/interface for the more generic solution. since bash breaks words
+    # differently than us (we only break using '" and whitespace, while bash
+    # breaks using characters in $COMP_WORDBREAKS, by default is "'><=;|&(:),
+    # this presents a problem we often encounter: if we want to provide with a
+    # list of strings containing ':', most often Perl modules/packages, if user
+    # types e.g. "Text::AN" and we provide completion ["Text::ANSI"] then bash
+    # will change the word at cursor to become "Text::Text::ANSI" since it sees
+    # the current word as "AN" and not "Text::AN". the workaround is to chop
+    # /Text::/ from completion answers. this doesn't always work perfectly (e.g.
+    # we can also provide completion for "t::an" (exp_im_path and ci feature)
+    # but a good-enough workaround for common cases. and we currently only
+    # consider ':' since that occurs often.
+    if (defined($opts->{word})) {
+        if ($opts->{word} =~ s/(.+:)//) {
+            my $prefix = $1;
+            for (@$comp) {
+                if (ref($_) eq 'HASH') {
+                    $_->{word} =~ s/\A\Q$prefix\E//;
+                } else {
+                    s/\A\Q$prefix\E//;
+                }
+            }
         }
     }
 
@@ -493,7 +528,7 @@ sub format_completion {
 }
 
 1;
-#ABSTRACT: Completion module for bash shell
+# ABSTRACT: Completion module for bash shell
 
 __END__
 
@@ -507,7 +542,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.13 of Complete::Bash (from Perl distribution Complete-Bash), released on 2014-11-30.
+This document describes version 0.14 of Complete::Bash (from Perl distribution Complete-Bash), released on 2015-12-29.
 
 =head1 DESCRIPTION
 
@@ -558,7 +593,7 @@ This module provides routines for you to be doing the above.
 =head1 FUNCTIONS
 
 
-=head2 format_completion($completion) -> array|str
+=head2 format_completion($completion, $opts) -> array|str
 
 Format completion for output (for shell).
 
@@ -622,6 +657,8 @@ Arguments ('*' denotes required arguments):
 Completion answer structure.
 
 Either an array or hash. See function description for more details.
+
+=item * B<opts> => I<hash>
 
 =back
 

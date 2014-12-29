@@ -1,22 +1,16 @@
-NAME
-    Complete::Bash - Completion module for bash shell
-
-VERSION
-    This document describes version 0.13 of Complete::Bash (from Perl
-    distribution Complete-Bash), released on 2014-11-30.
-
 DESCRIPTION
+
     Bash allows completion to come from various sources. The simplest is
-    from a list of words ("-W"):
+    from a list of words (-W):
 
      % complete -W "one two three four" somecmd
      % somecmd t<Tab>
      two  three
 
-    Another source is from a bash function ("-F"). The function will receive
-    input in two variables: "COMP_WORDS" (array, command-line chopped into
-    words) and "COMP_CWORD" (integer, index to the array of words indicating
-    the cursor position). It must set an array variable "COMPREPLY" that
+    Another source is from a bash function (-F). The function will receive
+    input in two variables: COMP_WORDS (array, command-line chopped into
+    words) and COMP_CWORD (integer, index to the array of words indicating
+    the cursor position). It must set an array variable COMPREPLY that
     contains the list of possible completion:
 
      % _foo()
@@ -31,11 +25,11 @@ DESCRIPTION
      --help  --verbose  --version
 
     And yet another source is an external command (including, a Perl
-    script). The command receives two environment variables: "COMP_LINE"
-    (string, raw command-line) and "COMP_POINT" (integer, cursor location).
-    Program must split "COMP_LINE" into words, find the word to be
-    completed, complete that, and return the list of words one per-line to
-    STDOUT. An example:
+    script). The command receives two environment variables: COMP_LINE
+    (string, raw command-line) and COMP_POINT (integer, cursor location).
+    Program must split COMP_LINE into words, find the word to be completed,
+    complete that, and return the list of words one per-line to STDOUT. An
+    example:
 
      % cat foo-complete
      #!/usr/bin/perl
@@ -44,252 +38,23 @@ DESCRIPTION
      my ($words, $cword) = @{ parse_cmdline() };
      my $res = complete_array_elem(array=>[qw/--help --verbose --version/], word=>$words->[$cword]);
      print format_completion($res);
-
+    
      % complete -C foo-complete foo
      % foo --v<Tab>
      --verbose --version
 
     This module provides routines for you to be doing the above.
 
-FUNCTIONS
-  format_completion($completion) -> array|str
-    Format completion for output (for shell).
-
-    Bash accepts completion reply in the form of one entry per line to
-    STDOUT. Some characters will need to be escaped. This function helps you
-    do the formatting, with some options.
-
-    This function accepts completion answer structure as described in the
-    "Complete" POD. Aside from "words", this function also recognizes these
-    keys:
-
-    *   "as" (str): Either "string" (the default) or "array" (to return
-        array of lines instead of the lines joined together). Returning
-        array is useful if you are doing completion inside "Term::ReadLine",
-        for example, where the library expects an array.
-
-    *   "escmode" (str): Escaping mode for entries. Either "default" (most
-        nonalphanumeric characters will be escaped), "shellvar" (like
-        "default", but dollar sign "$" will not be escaped, convenient when
-        completing environment variables for example), "filename" (currently
-        equals to "default"), "option" (currently equals to "default"), or
-        "none" (no escaping will be done).
-
-    *   "path_sep" (str): If set, will enable "path mode", useful for
-        completing/drilling-down path. Below is the description of "path
-        mode".
-
-        In shell, when completing filename (e.g. "foo") and there is only a
-        single possible completion (e.g. "foo" or "foo.txt"), the shell will
-        display the completion in the buffer and automatically add a space
-        so the user can move to the next argument. This is also true when
-        completing other values like variables or program names.
-
-        However, when completing directory (e.g. "/et" or "Downloads") and
-        there is solely a single completion possible and it is a directory
-        (e.g. "/etc" or "Downloads"), the shell automatically adds the path
-        separator character instead ("/etc/" or "Downloads/"). The user can
-        press Tab again to complete for files/directories inside that
-        directory, and so on. This is obviously more convenient compared to
-        when shell adds a space instead.
-
-        The "path_sep" option, when set, will employ a trick to mimic this
-        behaviour. The trick is, if you have a completion array of
-        "['foo/']", it will be changed to "['foo/', 'foo/ ']" (the second
-        element is the first element with added space at the end) to prevent
-        bash from adding a space automatically.
-
-        Path mode is not restricted to completing filesystem paths. Anything
-        path-like can use it. For example when you are completing Java or
-        Perl package name (e.g. "com.company.product.whatever" or
-        "File::Spec::Unix") you can use this mode (with "path_sep"
-        appropriately set to, e.g. "." or "::"). But note that in the case
-        of "::" since colon is a word-breaking character in Bash by default,
-        when typing you'll need to escape it (e.g. "mpath File\:\:Sp<tab>")
-        or use it inside quotes (e.g. "mpath "File::Sp<tab>").
-
-    Arguments ('*' denotes required arguments):
-
-    *   completion* => *array|hash*
-
-        Completion answer structure.
-
-        Either an array or hash. See function description for more details.
-
-    Return value:
-
-    Formatted string (or array, if `as` is set to `array`) (any)
-
-  parse_cmdline($cmdline, $point, $word_breaks, $preserve_quotes) -> array
-    Parse shell command-line for processing by completion routines.
-
-    This function basically converts COMP_LINE (str) and COMP_POINT (int) to
-    become COMP_WORDS (array) and COMP_CWORD (int), like what bash supplies
-    to shell functions. The differences with bash are: 1) quotes and
-    backslashes are by default stripped, unless you specify
-    "preserve_quotes"; 2) no word-breaking characters aside from whitespaces
-    are used, unless you specify more word-breaking characters by setting
-    "word_breaks".
-
-    Caveats:
-
-    *   Due to the way bash parses the command line, the two below are
-        equivalent:
-
-        % cmd --foo=bar % cmd --foo = bar
-
-    Because they both expand to "['--foo', '=', 'bar']", when "=" is used as
-    a word-breaking character. But obviously "Getopt::Long" does not regard
-    the two as equivalent.
-
-    Arguments ('*' denotes required arguments):
-
-    *   cmdline => *str*
-
-        Command-line, defaults to COMP_LINE environment.
-
-    *   point => *int*
-
-        Point/position to complete in command-line, defaults to COMP_POINT.
-
-    *   preserve_quotes => *bool* (default: 0)
-
-        Whether to preserve quotes, like bash does.
-
-    *   word_breaks => *str*
-
-        Extra characters to break word at.
-
-        In addition to space and tab.
-
-        Example: "=:".
-
-        Note that the characters won't break words if inside quotes or
-        escaped.
-
-    Return value:
-
-     (array)
-
-    Return a 2-element array: "[$words, $cword]". $words is array of str,
-    equivalent to "COMP_WORDS" provided by bash to shell functions. $cword
-    is an integer, equivalent to "COMP_CWORD" provided by bash to shell
-    functions. The word to be completed is at "$words->[$cword]".
-
-    Note that COMP_LINE includes the command name. If you want the
-    command-line arguments only (like in @ARGV), you need to strip the first
-    element from $words and reduce $cword by 1.
-
-    See also:
-
-        * Parse::CommandLine
-
-        The module "Parse::CommandLine" has a function called
-        "parse_command_line()" which is similar, breaking a command-line
-        string into words (in fact, currently "parse_cmdline()"'s
-        implementation is stolen from this module). However,
-        "parse_cmdline()" does not die on unclosed quotes and allows custom
-        word-breaking characters.
-
-  parse_options(%args) -> [status, msg, result, meta]
-    Parse command-line for options and arguments, more or less like
-    Getopt::Long.
-
-    Parse command-line into words using "parse_cmdline()" then separate
-    options and arguments. Since this routine does not accept "Getopt::Long"
-    (this routine is meant to be a generic option parsing of command-lines),
-    it uses a few simple rules to server the common cases:
-
-    *   After "--", the rest of the words are arguments (just like
-        Getopt::Long).
-
-    *   If we get something like "-abc" (a single dash followed by several
-        letters) it is assumed to be a bundle of short options.
-
-    *   If we get something like "-MData::Dump" (a single dash, followed by
-        a letter, followed by some letters *and* non-letters/numbers) it is
-        assumed to be an option ("-M") followed by a value.
-
-    *   If we get something like "--foo" it is a long option. If the next
-        word is an option (starts with a "-") then it is assumed that this
-        option does not have argument. Otherwise, the next word is assumed
-        to be this option's value.
-
-    *   Otherwise, it is an argument (that is, permute is assumed).
-
-    Arguments ('*' denotes required arguments):
-
-    *   cmdline => *str*
-
-        Command-line, defaults to COMP_LINE environment.
-
-    *   cword => *array*
-
-        Alternative to passing `cmdline` and `point`.
-
-        If you already did a "parse_cmdline()", you can pass the cword
-        result (the second element) here to avoid calling "parse_cmdline()"
-        twice.
-
-    *   point => *int*
-
-        Point/position to complete in command-line, defaults to COMP_POINT.
-
-    *   words => *array*
-
-        Alternative to passing `cmdline` and `point`.
-
-        If you already did a "parse_cmdline()", you can pass the words
-        result (the first element) here to avoid calling "parse_cmdline()"
-        twice.
-
-    Return value:
-
-    Returns an enveloped result (an array).
-
-    First element (status) is an integer containing HTTP status code (200
-    means OK, 4xx caller error, 5xx function error). Second element (msg) is
-    a string containing error message, or 'OK' if status is 200. Third
-    element (result) is optional, the actual result. Fourth element (meta)
-    is called result metadata and is optional, a hash that contains extra
-    information.
-
-     (hash)
-
 TODOS
+
     format_completion(): Accept regex for path_sep.
 
 SEE ALSO
+
     Other modules related to bash shell tab completion: Bash::Completion,
     Getopt::Complete. Term::Bash::Completion::Generator
 
     Programmable Completion section in Bash manual:
-    <https://www.gnu.org/software/bash/manual/html_node/Programmable-Complet
-    ion.html>
-
-    Complete
-
-HOMEPAGE
-    Please visit the project's homepage at
-    <https://metacpan.org/release/Complete-Bash>.
-
-SOURCE
-    Source repository is at
-    <https://github.com/sharyanto/perl-Complete-Bash>.
-
-BUGS
-    Please report any bugs or feature requests on the bugtracker website
-    <https://rt.cpan.org/Public/Dist/Display.html?Name=Complete-Bash>
-
-    When submitting a bug or request, please include a test-file or a patch
-    to an existing test-file that illustrates the bug or desired feature.
-
-AUTHOR
-    perlancar <perlancar@cpan.org>
-
-COPYRIGHT AND LICENSE
-    This software is copyright (c) 2014 by perlancar@cpan.org.
-
-    This is free software; you can redistribute it and/or modify it under
-    the same terms as the Perl 5 programming language system itself.
+    https://www.gnu.org/software/bash/manual/html_node/Programmable-Complet
+    ion.html
 
