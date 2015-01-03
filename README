@@ -45,10 +45,6 @@ DESCRIPTION
 
     This module provides routines for you to be doing the above.
 
-TODOS
-
-    format_completion(): Accept regex for path_sep.
-
 SEE ALSO
 
     Other modules related to bash shell tab completion: Bash::Completion,

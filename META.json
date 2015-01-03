@@ -10,7 +10,7 @@
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : "2"
+      "version" : 2
    },
    "name" : "Complete-Bash",
    "prereqs" : {
@@ -56,10 +56,10 @@
          "web" : "https://github.com/sharyanto/perl-Complete-Bash"
       }
    },
-   "version" : "0.15",
+   "version" : "0.16",
    "x_Dist_Zilla" : {
       "perl" : {
-         "version" : "5.018001"
+         "version" : "5.018002"
       },
       "plugins" : [
          {
@@ -373,6 +373,11 @@
          {
             "class" : "Dist::Zilla::Plugin::Test::Rinci",
             "name" : "@Author::PERLANCAR/Test::Rinci",
+            "version" : "0.01"
+         },
+         {
+            "class" : "Dist::Zilla::Plugin::PERLANCAR::GenTodoMd",
+            "name" : "@Author::PERLANCAR/PERLANCAR::GenTodoMd",
             "version" : "0.01"
          },
          {

@@ -1,7 +1,7 @@
 package Complete::Bash;
 
-our $DATE = '2014-12-29'; # DATE
-our $VERSION = '0.15'; # VERSION
+our $DATE = '2015-01-03'; # DATE
+our $VERSION = '0.16'; # VERSION
 
 use 5.010001;
 use strict;
@@ -485,18 +485,19 @@ sub format_completion {
     # types e.g. "Text::AN" and we provide completion ["Text::ANSI"] then bash
     # will change the word at cursor to become "Text::Text::ANSI" since it sees
     # the current word as "AN" and not "Text::AN". the workaround is to chop
-    # /Text::/ from completion answers. this doesn't always work perfectly (e.g.
-    # we can also provide completion for "t::an" (exp_im_path and ci feature)
-    # but a good-enough workaround for common cases. and we currently only
+    # /^Text::/ from completion answers. btw, we actually chop /^text::/i to
+    # handle case-insensitive matching, although this does not have the ability
+    # to replace the current word (e.g. if we type 'text::an' then bash can only
+    # replace the current word 'an' with 'ANSI). also, we currently only
     # consider ':' since that occurs often.
     if (defined($opts->{word})) {
         if ($opts->{word} =~ s/(.+:)//) {
             my $prefix = $1;
             for (@$comp) {
                 if (ref($_) eq 'HASH') {
-                    $_->{word} =~ s/\A\Q$prefix\E//;
+                    $_->{word} =~ s/\A\Q$prefix\E//i;
                 } else {
-                    s/\A\Q$prefix\E//;
+                    s/\A\Q$prefix\E//i;
                 }
             }
         }
@@ -539,7 +540,7 @@ Complete::Bash - Completion module for bash shell
 
 =head1 VERSION
 
-This document describes version 0.15 of Complete::Bash (from Perl distribution Complete-Bash), released on 2015-12-29.
+This document describes version 0.16 of Complete::Bash (from Perl distribution Complete-Bash), released on 2015-01-03.
 
 =head1 DESCRIPTION
 
@@ -590,7 +591,7 @@ This module provides routines for you to be doing the above.
 =head1 FUNCTIONS
 
 
-=head2 format_completion($completion, $opts) -> array|str
+=head2 format_completion($completion, $opts) -> str|array
 
 Format completion for output (for shell).
 
@@ -646,7 +647,7 @@ Arguments ('*' denotes required arguments):
 
 =over 4
 
-=item * B<completion>* => I<array|hash>
+=item * B<completion>* => I<hash|array>
 
 Completion answer structure.
 
@@ -656,10 +657,7 @@ Either an array or hash. See function description for more details.
 
 =back
 
-Return value:
-
-Formatted string (or array, if `as` is set to `array`) (any)
-
+Return value: Formatted string (or array, if `as` is set to `array`) (str|array)
 
 =head2 parse_cmdline($cmdline, $point, $word_breaks, $preserve_quotes) -> array
 
@@ -715,9 +713,7 @@ Note that the characters won't break words if inside quotes or escaped.
 
 =back
 
-Return value:
-
- (array)
+Return value:  (array)
 
 Return a 2-element array: C<[$words, $cword]>. C<$words> is array of str,
 equivalent to C<COMP_WORDS> provided by bash to shell functions. C<$cword> is an
@@ -779,7 +775,7 @@ Arguments ('*' denotes required arguments):
 
 Command-line, defaults to COMP_LINE environment.
 
-=item * B<cword> => I<array>
+=item * B<cword> => I<array[str]>
 
 Alternative to passing `cmdline` and `point`.
 
@@ -790,7 +786,7 @@ second element) here to avoid calling C<parse_cmdline()> twice.
 
 Point/position to complete in command-line, defaults to COMP_POINT.
 
-=item * B<words> => I<array>
+=item * B<words> => I<array[str]>
 
 Alternative to passing `cmdline` and `point`.
 
@@ -798,8 +794,6 @@ If you already did a C<parse_cmdline()>, you can pass the words result (the firs
 element) here to avoid calling C<parse_cmdline()> twice.
 
 =back
-
-Return value:
 
 Returns an enveloped result (an array).
 
@@ -810,12 +804,7 @@ First element (status) is an integer containing HTTP status code
 element (meta) is called result metadata and is optional, a hash
 that contains extra information.
 
- (hash)
-
-=head1 TODOS
-
-format_completion(): Accept regex for path_sep.
-
+Return value:  (hash)
 =head1 SEE ALSO
 
 Other modules related to bash shell tab completion: L<Bash::Completion>,
@@ -849,7 +838,7 @@ perlancar <perlancar@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2014 by perlancar@cpan.org.
+This software is copyright (c) 2015 by perlancar@cpan.org.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

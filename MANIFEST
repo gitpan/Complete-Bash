@@ -6,6 +6,7 @@ META.json
 META.yml
 Makefile.PL
 README
+TODO.md
 dist.ini
 lib/Complete/Bash.pm
 t/00-compile.t
